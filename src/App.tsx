@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
 import { 
   Globe, ShieldCheck, Stethoscope, Activity, Network, 
   ChevronRight, ArrowRight, Database, Lock, DollarSign, 
   FileText, Clock, AlertCircle, Briefcase, Users
 } from 'lucide-react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Sphere, Float, Stars, Line } from '@react-three/drei';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
+import { OrbitControls, Environment, Float, Sparkles, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 
 // --- MOCK DATA ---
@@ -62,106 +62,191 @@ const MOCK_DATA = {
   }
 };
 
-// --- 3D COMPONENTS (THREE.JS) ---
+// --- ULTRA-REALISTIC 3D COMPONENTS ---
 
-const ElegantConnections = () => {
-  // Generate curved arcs simulating the "digital bridge" from Egypt to the Gulf
-  const curves = useMemo(() => {
-    return Array.from({ length: 12 }).map(() => {
-      const start = new THREE.Vector3(
-        (Math.random() - 0.5) * 3,
-        (Math.random() - 0.5) * 3 + 1,
-        2
-      );
-      const end = new THREE.Vector3(
-        (Math.random() - 0.5) * 3,
-        (Math.random() - 0.5) * 3 - 1,
-        -2
-      );
-      const mid = new THREE.Vector3(
-        (start.x + end.x) / 2 + (Math.random() - 0.5) * 2,
-        (start.y + end.y) / 2 + (Math.random() - 0.5) * 2,
-        (start.z + end.z) / 2 + (Math.random() - 0.5) * 2
-      );
-      const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
-      return curve.getPoints(50);
-    });
-  }, []);
+const EARTH_RADIUS = 2.5;
 
-  return (
-    <group>
-      {curves.map((points, i) => (
-        <Line 
-          key={i} 
-          points={points} 
-          color="#06b6d4" 
-          opacity={0.15 + Math.random() * 0.2} 
-          transparent 
-          lineWidth={1.5} 
-        />
-      ))}
-    </group>
-  );
-};
+function getCoordinates(lat: number, lng: number, radius: number) {
+  // standard spherical to cartesian conversion for three-globe mappings
+  const phi = (90 - lat) * (Math.PI / 180);
+  const theta = (lng + 180) * (Math.PI / 180);
+  const x = -(radius * Math.sin(phi) * Math.cos(theta));
+  const z = (radius * Math.sin(phi) * Math.sin(theta));
+  const y = (radius * Math.cos(phi));
+  return new THREE.Vector3(x, y, z);
+}
 
-const DataGlobe = () => {
-  const group = useRef<THREE.Group>(null);
+const ArcParticle = ({ curve, delay }: { curve: THREE.QuadraticBezierCurve3, delay: number }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
   
-  useFrame((state, delta) => {
-    if (group.current) {
-      group.current.rotation.y += delta * 0.1;
-      group.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
+  useFrame((state) => {
+    if (meshRef.current) {
+      const t = ((state.clock.elapsedTime * 0.4) + delay) % 1;
+      const point = curve.getPoint(t);
+      meshRef.current.position.copy(point);
     }
   });
 
   return (
-    <group ref={group}>
-      {/* Central Solid Core */}
-      <Sphere args={[2, 64, 64]}>
-        <meshPhysicalMaterial 
-          color="#020617" 
-          roughness={0.8} 
-          clearcoat={0.1} 
-        />
-      </Sphere>
+    <mesh ref={meshRef}>
+      <sphereGeometry args={[0.02, 16, 16]} />
+      <meshBasicMaterial color="#ffffff" />
+      <pointLight color="#ffffff" intensity={2} distance={0.5} />
+    </mesh>
+  );
+};
 
-      {/* Glowing Outer Wireframe */}
-      <Sphere args={[2.02, 32, 32]}>
-        <meshBasicMaterial 
-          color="#0891b2" 
-          wireframe 
-          transparent 
-          opacity={0.15} 
-          blending={THREE.AdditiveBlending}
-        />
-      </Sphere>
+const MedicalNetwork = ({ radius }: { radius: number }) => {
+  const arcs = useMemo(() => {
+    const links = [];
+    const egyptLat = 26.8, egyptLng = -149.2; // Adjusted longitude for texture alignment
+    const pE = getCoordinates(egyptLat, egyptLng, radius * 1.01);
+    
+    // Connected nodes (adjusted lng for exact visual alignment)
+    const gulfPoints = [
+      { lat: 24.7, lng: -133.3, name: "Riyadh" },
+      { lat: 25.2, lng: -124.8, name: "Dubai" },
+      { lat: 21.5, lng: -140.9, name: "Jeddah" },
+      { lat: 26.2, lng: -129.5, name: "Bahrain" },
+      { lat: 29.3, lng: -132.1, name: "Kuwait" },
+    ];
 
-      {/* Orbiting Nodes (Hospitals/Doctors) */}
-      {Array.from({ length: 45 }).map((_, i) => {
-        const radius = 2.4 + Math.random() * 0.8;
-        const phi = Math.acos(-1 + (2 * i) / 45);
-        const theta = Math.sqrt(45 * Math.PI) * phi;
-        const x = radius * Math.cos(theta) * Math.sin(phi);
-        const y = radius * Math.sin(theta) * Math.sin(phi);
-        const z = radius * Math.cos(phi);
-        const isGulf = Math.random() > 0.5;
-        
-        return (
-          <Float key={i} speed={2} rotationIntensity={1} floatIntensity={1}>
-            <mesh position={[x, y, z]}>
-              <sphereGeometry args={[isGulf ? 0.04 : 0.02, 16, 16]} />
-              <meshBasicMaterial 
-                color={isGulf ? "#22d3ee" : "#3b82f6"} 
-                transparent
-                opacity={0.8}
-                blending={THREE.AdditiveBlending}
-              />
-            </mesh>
-          </Float>
-        );
-      })}
+    gulfPoints.forEach(pt => {
+       const p2 = getCoordinates(pt.lat, pt.lng, radius * 1.01);
+       // Arc highest point
+       const mid = pE.clone().lerp(p2, 0.5).normalize().multiplyScalar(radius * 1.15);
+       links.push({
+          curve: new THREE.QuadraticBezierCurve3(pE, mid, p2),
+          p1: pE,
+          p2: p2,
+          name: pt.name
+       });
+    });
 
-      <ElegantConnections />
+    return links;
+  }, [radius]);
+
+  return (
+    <group>
+      {arcs.map((arc, i) => (
+         <group key={i}>
+           {/* Glowing Arc Segment */}
+           <mesh>
+             <tubeGeometry args={[arc.curve, 64, 0.015, 8, false]} />
+             <meshBasicMaterial color="#22d3ee" transparent opacity={0.3} blending={THREE.AdditiveBlending} />
+           </mesh>
+           {/* Destination Node */}
+           <mesh position={arc.p2}>
+             <sphereGeometry args={[0.03, 16, 16]} />
+             <meshBasicMaterial color="#a5f3fc" />
+             <pointLight color="#22d3ee" intensity={0.5} distance={1} />
+           </mesh>
+           {/* Moving packet */}
+           <ArcParticle curve={arc.curve} delay={i * 0.2} />
+         </group>
+      ))}
+      {/* Origin Node (Egypt) */}
+      <mesh position={arcs[0]?.p1}>
+        <sphereGeometry args={[0.05, 16, 16]} />
+        <meshBasicMaterial color="#ffffff" />
+        <pointLight color="#ffffff" intensity={2} distance={2} />
+      </mesh>
+    </group>
+  );
+};
+
+const HyperRealisticEarth = () => {
+  // Using high-res textures from unpkg/three-globe for physical realism
+  const [colorMap, bumpMap, specMap, emissiveMap] = useLoader(THREE.TextureLoader, [
+    'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+    'https://unpkg.com/three-globe/example/img/earth-topology.png',
+    'https://unpkg.com/three-globe/example/img/earth-water.png',
+    'https://unpkg.com/three-globe/example/img/earth-night.jpg'
+  ]);
+
+  const earthGroup = useRef<THREE.Group>(null);
+  
+  useFrame((_, delta) => {
+    if (earthGroup.current) {
+      earthGroup.current.rotation.y += delta * 0.02;
+    }
+  });
+
+  return (
+    <group ref={earthGroup} rotation={[0.2, -1.0, 0]}>
+       {/* Main Earth Body */}
+       <mesh>
+         <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
+         <meshStandardMaterial 
+            map={colorMap}
+            bumpMap={bumpMap}
+            bumpScale={0.03}
+            metalnessMap={specMap} // Water will reflect light intensely
+            metalness={0.9}
+            roughness={0.3}
+            emissiveMap={emissiveMap}
+            emissive={new THREE.Color('#38bdf8')}
+            emissiveIntensity={0.15}
+         />
+       </mesh>
+       
+       {/* Atmospheric Glow/Scattering */}
+       <mesh>
+         <sphereGeometry args={[EARTH_RADIUS * 1.015, 32, 32]} />
+         <meshLambertMaterial
+            color="#38bdf8"
+            transparent
+            opacity={0.15}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+         />
+       </mesh>
+
+       {/* Medical Node Network across the region */}
+       <MedicalNetwork radius={EARTH_RADIUS} />
+    </group>
+  );
+};
+
+const FloatingGlassPanels = () => {
+  return (
+    <group>
+       {[
+         { pos: [-4, 2, 2] as [number,number,number], rot: [0.2, 0.5, -0.1] as [number,number,number], delay: 0 },
+         { pos: [5, -1, 1] as [number,number,number], rot: [-0.1, -0.4, 0.2] as [number,number,number], delay: 1 },
+         { pos: [-3, -3, -1] as [number,number,number], rot: [0.5, 0.1, 0.1] as [number,number,number], delay: 2 }
+       ].map((conf, i) => (
+         <Float key={i} speed={2} rotationIntensity={0.5} floatIntensity={1.5} floatingRange={[-0.2, 0.2]}>
+           <mesh position={conf.pos} rotation={conf.rot}>
+             <boxGeometry args={[2, 1.2, 0.05]} />
+             <meshStandardMaterial 
+               transparent
+               opacity={0.3}
+               roughness={0.1}
+               metalness={0.5}
+               color="#bae6fd"
+             />
+             <lineSegments>
+                <edgesGeometry args={[new THREE.BoxGeometry(2, 1.2, 0.05)]} />
+                <lineBasicMaterial color="#38bdf8" transparent opacity={0.3} />
+             </lineSegments>
+           </mesh>
+         </Float>
+       ))}
+    </group>
+  );
+};
+
+const ViewportScene = () => {
+  const { viewport } = useThree();
+  const isMobile = viewport.width < 5;
+  
+  return (
+    <group position={isMobile ? [0, 2, -2] : [2, 0, 0]}>
+      <Suspense fallback={null}>
+        <HyperRealisticEarth />
+      </Suspense>
+      <FloatingGlassPanels />
     </group>
   );
 };
@@ -175,19 +260,19 @@ const staggerContainer = {
   }
 };
 
-const fadeUp = {
+const fadeUp: any = {
   hidden: { opacity: 0, y: 40 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
 };
 
-const fadeSlideLeft = {
+const fadeSlideLeft: any = {
   hidden: { opacity: 0, x: -50 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+  show: { opacity: 1, x: 0, transition: { duration: 0.8, ease: "easeOut" } }
 };
 
-const fadeSlideRight = {
+const fadeSlideRight: any = {
   hidden: { opacity: 0, x: 50 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+  show: { opacity: 1, x: 0, transition: { duration: 0.8, ease: "easeOut" } }
 };
 
 // --- VIEWS ---
@@ -201,20 +286,26 @@ const MarketingView = ({ onLogin }: { onLogin: () => void }) => {
     <div className="bg-[#020617] text-slate-100 font-sans overflow-x-hidden selection:bg-cyan-500/30">
       
       {/* Breathtaking 3D Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-80 mix-blend-screen">
-        <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
-          <fog attach="fog" args={['#020617', 5, 15]} />
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} intensity={1} color="#06b6d4" />
-          <pointLight position={[-10, -10, -10]} intensity={0.5} color="#3b82f6" />
-          <Stars radius={50} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
-          <DataGlobe />
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-90 mix-blend-screen">
+        <Canvas camera={{ position: [0, 0, 7], fov: 45 }}>
+          <fog attach="fog" args={['#020617', 5, 20]} />
+          
+          <ambientLight intensity={0.2} color="#bae6fd" />
+          <directionalLight position={[10, 10, 5]} intensity={1.5} color="#ffffff" />
+          <pointLight position={[-10, 5, -10]} intensity={2} color="#0284c7" />
+          
+          <Stars radius={50} depth={50} count={1000} factor={4} saturation={0} fade speed={1} />
+          
+          <Environment preset="city" />
+
+          <ViewportScene />
+
           <OrbitControls 
             enableZoom={false} 
             enablePan={false} 
             makeDefault 
             autoRotate 
-            autoRotateSpeed={0.5} 
+            autoRotateSpeed={0.3} 
           />
         </Canvas>
         {/* Vignette Overlay for deeper contrast */}
@@ -448,31 +539,54 @@ const MarketingView = ({ onLogin }: { onLogin: () => void }) => {
             <span className="text-slate-500 font-light italic">The Psychology of the Provider</span>
           </motion.h2>
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="flex gap-8 overflow-x-auto pb-12 snap-x snap-mandatory scrollbar-hide"
-          >
-            {MOCK_DATA.quotes.map((item, idx) => (
-              <div
-                key={idx}
-                className="min-w-[340px] md:min-w-[480px] p-10 rounded-[2rem] bg-slate-900/40 backdrop-blur-xl border border-slate-800 hover:border-cyan-500/30 transition-colors snap-center shrink-0 flex flex-col justify-between"
-              >
-                <div className="mb-10">
-                  <span className="text-6xl text-cyan-900/50 mb-4 block leading-none saturate-[0.2] font-serif">"</span>
-                  <p className="text-xl text-slate-300 font-medium leading-relaxed">"{item.quote}"</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner">
-                    <Stethoscope className="w-6 h-6 text-cyan-500" />
-                  </div>
-                  <span className="font-bold text-white tracking-wide">{item.role}</span>
-                </div>
-              </div>
-            ))}
-          </motion.div>
+            <motion.div 
+               initial={{ opacity: 0 }}
+               whileInView={{ opacity: 1 }}
+               viewport={{ once: true }}
+               transition={{ duration: 1, delay: 0.2 }}
+               className="relative flex overflow-hidden w-full flex-nowrap mask-edges"
+               style={{ maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}
+             >
+               <div className="flex gap-8 animate-marquee pr-8 items-stretch shrink-0 hover:[animation-play-state:paused]">
+                 {MOCK_DATA.quotes.map((item, idx) => (
+                   <div
+                     key={`q1-${idx}`}
+                     className="w-[340px] md:w-[480px] p-10 rounded-[2rem] bg-slate-900/40 backdrop-blur-xl border border-slate-800 hover:border-cyan-500/30 transition-colors shrink-0 flex flex-col justify-between"
+                   >
+                     <div className="mb-10">
+                       <span className="text-6xl text-cyan-900/50 mb-4 block leading-none saturate-[0.2] font-serif">"</span>
+                       <p className="text-xl text-slate-300 font-medium leading-relaxed">"{item.quote}"</p>
+                     </div>
+                     <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner">
+                         <Stethoscope className="w-6 h-6 text-cyan-500" />
+                       </div>
+                       <span className="font-bold text-white tracking-wide">{item.role}</span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+               
+               <div className="flex gap-8 animate-marquee pr-8 items-stretch shrink-0 hover:[animation-play-state:paused]" aria-hidden="true">
+                 {MOCK_DATA.quotes.map((item, idx) => (
+                   <div
+                     key={`q2-${idx}`}
+                     className="w-[340px] md:w-[480px] p-10 rounded-[2rem] bg-slate-900/40 backdrop-blur-xl border border-slate-800 hover:border-cyan-500/30 transition-colors shrink-0 flex flex-col justify-between"
+                   >
+                     <div className="mb-10">
+                       <span className="text-6xl text-cyan-900/50 mb-4 block leading-none saturate-[0.2] font-serif">"</span>
+                       <p className="text-xl text-slate-300 font-medium leading-relaxed">"{item.quote}"</p>
+                     </div>
+                     <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner">
+                         <Stethoscope className="w-6 h-6 text-cyan-500" />
+                       </div>
+                       <span className="font-bold text-white tracking-wide">{item.role}</span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </motion.div>
         </div>
       </section>
       
