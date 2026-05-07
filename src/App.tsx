@@ -1,25 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
 import { 
-  Globe, 
-  ShieldCheck, 
-  Stethoscope, 
-  Activity, 
-  Network, 
-  ChevronRight, 
-  ArrowRight,
-  Database,
-  Lock,
-  DollarSign,
-  FileText,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Briefcase,
-  Users
+  Globe, ShieldCheck, Stethoscope, Activity, Network, 
+  ChevronRight, ArrowRight, Database, Lock, DollarSign, 
+  FileText, Clock, AlertCircle, Briefcase, Users
 } from 'lucide-react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, Sphere, Float, Stars, Line } from '@react-three/drei';
+import * as THREE from 'three';
 
-// --- MOCK DATA INJECTION ---
+// --- MOCK DATA ---
 const MOCK_DATA = {
   gulfCrisis: [
     { metric: "15,000 - 20,000", label: "Specialist Deficit in KSA by 2030", icon: Users },
@@ -67,507 +57,679 @@ const MOCK_DATA = {
       { id: "MRI-773-BRN", type: "Pediatric Neuro-Radiology", urgency: "STAT", time: "14 mins ago", hospital: "Jeddah Regional", fee: "$24.00" },
       { id: "CT-291-CHST", type: "Thoracic Oncology Follow-up", urgency: "Routine", time: "2 hrs ago", hospital: "Riyadh Care", fee: "$20.00" },
       { id: "PATH-002-TIS", type: "Tele-Pathology (Whole Slide)", urgency: "Routine", time: "5 hrs ago", hospital: "Dubai Specialized", fee: "$35.00" },
-    ],
-    activeSLAs: [
-      { hospital: "Jeddah Regional", status: "100% Compliant", readsThisMonth: 142, revenue: "$3,408.00" },
-      { hospital: "Riyadh Care", status: "98% Compliant", readsThisMonth: 89, revenue: "$1,780.00" }
+      { id: "MRI-912-SPN", type: "Spinal Cord Edema", urgency: "Urgent", time: "15 mins ago", hospital: "Jeddah Regional", fee: "$28.00" },
     ]
   }
 };
 
-// --- COMPONENTS ---
+// --- 3D COMPONENTS (THREE.JS) ---
 
-const Background3D = () => {
+const ElegantConnections = () => {
+  // Generate curved arcs simulating the "digital bridge" from Egypt to the Gulf
+  const curves = useMemo(() => {
+    return Array.from({ length: 12 }).map(() => {
+      const start = new THREE.Vector3(
+        (Math.random() - 0.5) * 3,
+        (Math.random() - 0.5) * 3 + 1,
+        2
+      );
+      const end = new THREE.Vector3(
+        (Math.random() - 0.5) * 3,
+        (Math.random() - 0.5) * 3 - 1,
+        -2
+      );
+      const mid = new THREE.Vector3(
+        (start.x + end.x) / 2 + (Math.random() - 0.5) * 2,
+        (start.y + end.y) / 2 + (Math.random() - 0.5) * 2,
+        (start.z + end.z) / 2 + (Math.random() - 0.5) * 2
+      );
+      const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+      return curve.getPoints(50);
+    });
+  }, []);
+
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none perspective-[1000px]">
-      <div className="absolute inset-0 bg-slate-950" />
-      <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950" />
-      
-      {/* Animated 3D Grid & Floating Nodes */}
-      <motion.div 
-        initial={{ rotateX: 60, scale: 2, y: 100 }}
-        animate={{ rotateZ: 360 }}
-        transition={{ duration: 150, repeat: Infinity, ease: "linear" }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200vw] h-[200vw] border-[1px] border-cyan-900/10 rounded-full"
-        style={{ transformStyle: 'preserve-3d' }}
-      >
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgwek0xOSAxOXYyaDJ2LTJoLTJ6IiBmaWxsPSJyZ2JhKDIyLCIDEwMiwgMTU1LCAwLjEpIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=')] [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
-      </motion.div>
-
-      {/* Floating Medical Data Blocks */}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute"
-          initial={{ 
-            x: Math.random() * window.innerWidth, 
-            y: Math.random() * window.innerHeight,
-            z: Math.random() * 200 - 100,
-            opacity: 0 
-          }}
-          animate={{ 
-            y: [null, Math.random() * -200 - 100],
-            opacity: [0, 0.4, 0]
-          }}
-          transition={{ 
-            duration: Math.random() * 10 + 10,
-            repeat: Infinity,
-            delay: Math.random() * 5,
-            ease: "linear"
-          }}
-        >
-          <div className="p-3 bg-cyan-950/30 backdrop-blur-md border border-cyan-500/20 rounded-xl shadow-[0_0_15px_rgba(34,211,238,0.1)]">
-             {i % 3 === 0 ? <Activity className="w-6 h-6 text-cyan-400" /> : 
-              i % 3 === 1 ? <Network className="w-6 h-6 text-blue-400" /> : 
-              <Database className="w-6 h-6 text-slate-400" />}
-          </div>
-        </motion.div>
+    <group>
+      {curves.map((points, i) => (
+        <Line 
+          key={i} 
+          points={points} 
+          color="#06b6d4" 
+          opacity={0.15 + Math.random() * 0.2} 
+          transparent 
+          lineWidth={1.5} 
+        />
       ))}
-    </div>
+    </group>
   );
 };
 
-const MarketingView = ({ onLogin }: { onLogin: () => void }) => {
+const DataGlobe = () => {
+  const group = useRef<THREE.Group>(null);
+  
+  useFrame((state, delta) => {
+    if (group.current) {
+      group.current.rotation.y += delta * 0.1;
+      group.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
+    }
+  });
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500/30 font-sans overflow-x-hidden">
-      {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50 bg-slate-950/60 backdrop-blur-xl border-b border-white/5">
+    <group ref={group}>
+      {/* Central Solid Core */}
+      <Sphere args={[2, 64, 64]}>
+        <meshPhysicalMaterial 
+          color="#020617" 
+          roughness={0.8} 
+          clearcoat={0.1} 
+        />
+      </Sphere>
+
+      {/* Glowing Outer Wireframe */}
+      <Sphere args={[2.02, 32, 32]}>
+        <meshBasicMaterial 
+          color="#0891b2" 
+          wireframe 
+          transparent 
+          opacity={0.15} 
+          blending={THREE.AdditiveBlending}
+        />
+      </Sphere>
+
+      {/* Orbiting Nodes (Hospitals/Doctors) */}
+      {Array.from({ length: 45 }).map((_, i) => {
+        const radius = 2.4 + Math.random() * 0.8;
+        const phi = Math.acos(-1 + (2 * i) / 45);
+        const theta = Math.sqrt(45 * Math.PI) * phi;
+        const x = radius * Math.cos(theta) * Math.sin(phi);
+        const y = radius * Math.sin(theta) * Math.sin(phi);
+        const z = radius * Math.cos(phi);
+        const isGulf = Math.random() > 0.5;
+        
+        return (
+          <Float key={i} speed={2} rotationIntensity={1} floatIntensity={1}>
+            <mesh position={[x, y, z]}>
+              <sphereGeometry args={[isGulf ? 0.04 : 0.02, 16, 16]} />
+              <meshBasicMaterial 
+                color={isGulf ? "#22d3ee" : "#3b82f6"} 
+                transparent
+                opacity={0.8}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          </Float>
+        );
+      })}
+
+      <ElegantConnections />
+    </group>
+  );
+};
+
+// --- ANIMATION VARIANTS ---
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15 }
+  }
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+};
+
+const fadeSlideLeft = {
+  hidden: { opacity: 0, x: -50 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+};
+
+const fadeSlideRight = {
+  hidden: { opacity: 0, x: 50 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+};
+
+// --- VIEWS ---
+
+const MarketingView = ({ onLogin }: { onLogin: () => void }) => {
+  const { scrollYProgress } = useScroll();
+  const yHero = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
+  const opacityHero = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
+
+  return (
+    <div className="bg-[#020617] text-slate-100 font-sans overflow-x-hidden selection:bg-cyan-500/30">
+      
+      {/* Breathtaking 3D Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-80 mix-blend-screen">
+        <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
+          <fog attach="fog" args={['#020617', 5, 15]} />
+          <ambientLight intensity={0.5} />
+          <pointLight position={[10, 10, 10]} intensity={1} color="#06b6d4" />
+          <pointLight position={[-10, -10, -10]} intensity={0.5} color="#3b82f6" />
+          <Stars radius={50} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
+          <DataGlobe />
+          <OrbitControls 
+            enableZoom={false} 
+            enablePan={false} 
+            makeDefault 
+            autoRotate 
+            autoRotateSpeed={0.5} 
+          />
+        </Canvas>
+        {/* Vignette Overlay for deeper contrast */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#020617_100%)]" />
+      </div>
+
+      {/* Navbar (Glassmorphism) */}
+      <motion.nav 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="fixed top-0 w-full z-50 bg-[#020617]/50 backdrop-blur-2xl border-b border-white/5"
+      >
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.3)]">
-              <Stethoscope className="text-white w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+              <Stethoscope className="text-white w-5 h-5 absolute z-10" />
+              <div className="absolute inset-0 rounded-full border border-white/40 mix-blend-overlay"></div>
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">CareOn<span className="text-cyan-400">Call</span></span>
+            <span className="text-xl font-bold tracking-tight text-white">
+              CareOn<span className="text-cyan-400 font-light">Call</span>
+            </span>
           </div>
-          <div className="flex items-center gap-6">
-            <button className="text-sm font-medium text-slate-300 hover:text-white transition-colors duration-200">
-              Methodology
-            </button>
-            <button className="text-sm font-medium text-slate-300 hover:text-white transition-colors duration-200">
-              Clinical Scope
-            </button>
+          <div className="hidden md:flex items-center gap-8">
+            <span className="text-sm font-medium text-slate-400 hover:text-cyan-300 transition-colors cursor-pointer">Methodology</span>
+            <span className="text-sm font-medium text-slate-400 hover:text-cyan-300 transition-colors cursor-pointer">Clinical Scope</span>
             <button 
               onClick={onLogin}
-              className="group relative px-6 py-2.5 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-700 rounded-full overflow-hidden transition-all duration-300 border border-slate-600 hover:border-cyan-500/50"
+              className="group relative px-6 py-2.5 text-sm font-semibold text-white bg-white/5 hover:bg-white/10 rounded-full overflow-hidden transition-all duration-300 border border-white/10 hover:border-cyan-500/50 backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0)] hover:shadow-[0_0_20px_rgba(6,182,212,0.3)]"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative flex items-center gap-2">
-                Provider Login (Demo) <Lock className="w-4 h-4" />
+              <span className="relative z-10 flex items-center gap-2">
+                Provider Login (Demo) <Lock className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
               </span>
             </button>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-40 pb-32 lg:pt-48 lg:pb-40 px-6">
-        <Background3D />
-        <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center text-center">
+      {/* 1. The Hero Section (The Hook) */}
+      <motion.section 
+        style={{ y: yHero, opacity: opacityHero }}
+        className="relative z-10 min-h-screen flex items-center pt-24 pb-32 px-6"
+      >
+        <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-950/50 border border-cyan-500/20 text-cyan-300 text-sm font-medium mb-8 backdrop-blur-md"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-cyan-950/30 border border-cyan-500/20 text-cyan-300 text-sm font-medium mb-10 backdrop-blur-md shadow-[0_0_20px_rgba(6,182,212,0.15)]"
           >
-            <Globe className="w-4 h-4" />
-            B2B Cross-Border Telehealth Infrastructure
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            Active B2B Telehealth Node Framework
           </motion.div>
 
           <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
-            className="text-5xl lg:text-7xl font-bold tracking-tighter mb-8 leading-[1.1] max-w-5xl"
+            transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="text-5xl md:text-6xl lg:text-8xl font-black tracking-tighter mb-8 leading-[1.05] max-w-6xl text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-200 to-slate-500 drop-shadow-2xl"
           >
-            Bridging the Gulf Deficit.<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-blue-600">
+            Bridging the Gulf Deficit. <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-500">
               Mobilizing Egyptian Excellence.
             </span>
           </motion.h1>
 
           <motion.p 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="text-lg lg:text-xl text-slate-400 max-w-3xl mb-12 leading-relaxed"
+            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="text-lg md:text-2xl text-slate-400 max-w-3xl mb-14 leading-relaxed font-light"
           >
-            A secure, B2B digital infrastructure platform formally partnering with Egyptian University Hospitals to integrate pre-credentialed specialists with Gulf hospital EHRs. We deliver asynchronous diagnostic reads, eradicating Gulf recruitment costs while compensating Egyptian doctors in direct USD.
+            A secure, B2B digital infrastructure platform formally partnering with Egyptian University Hospitals to integrate pre-credentialed specialists with Gulf hospital EHRs. <strong className="text-white font-medium">Eradicate Gulf recruitment costs. Compensate Egyptian doctors in direct USD.</strong>
           </motion.p>
 
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-            className="flex flex-col sm:flex-row items-center gap-4"
+            transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col sm:flex-row items-center gap-6 w-full sm:w-auto"
           >
-            <button className="w-full sm:w-auto px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 font-semibold rounded-full transition-colors duration-200">
+            <button className="w-full sm:w-auto px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 font-bold tracking-tight rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:scale-105">
               Partner as a Hospital
             </button>
             <button 
               onClick={onLogin}
-              className="w-full sm:w-auto px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-full shadow-[0_0_30px_rgba(8,145,178,0.4)] transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-4 bg-cyan-600/20 border border-cyan-500/50 hover:bg-cyan-600/30 text-white font-bold tracking-tight rounded-full backdrop-blur-md shadow-[0_0_20px_rgba(6,182,212,0.2)] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] hover:border-cyan-400 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 group"
             >
-              Provider Login <ArrowRight className="w-5 h-5" />
+              Provider Login <ArrowRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-1 transition-transform" />
             </button>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* 2. The Crisis & The Opportunity */}
+      <section className="py-40 relative z-10 px-6 border-t border-white/5 bg-gradient-to-b from-[#020617]/0 via-[#020617] to-[#020617]">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgwek0xOSAxOXYyaDJ2LTJoLTJ6IiBmaWxsPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMDMpIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=')] opacity-50" />
+        <div className="max-w-7xl mx-auto relative">
+          <motion.div 
+            initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            className="text-center mb-24"
+          >
+            <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-cyan-900/20 border border-cyan-500/20 mb-6 drop-shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+              <Activity className="w-8 h-8 text-cyan-400" />
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6 text-white drop-shadow-md">The Macro-Economic Crisis</h2>
+            <p className="text-slate-400 max-w-3xl mx-auto text-xl font-light">A simultaneous collapse of supply and demand that traditional market mechanics are incapable of resolving.</p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
+            {/* Gulf Segment */}
+            <motion.div 
+              initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
+              variants={fadeSlideLeft}
+              className="relative p-[1px] rounded-[2.5rem] bg-gradient-to-b from-red-500/30 to-slate-800/10"
+            >
+              <div className="absolute inset-0 bg-red-500/5 blur-3xl rounded-[3rem] -z-10" />
+              <div className="h-full p-10 lg:p-14 rounded-[2.5rem] bg-[#020617]/90 backdrop-blur-2xl">
+                <div className="inline-flex items-center gap-3 text-red-400 font-bold tracking-wide text-sm uppercase mb-8 bg-red-950/50 px-4 py-2 rounded-full border border-red-500/20">
+                  <AlertCircle className="w-4 h-4" /> The Gulf Market Collapse
+                </div>
+                <h3 className="text-3xl font-bold mb-10 text-white tracking-tight">The Unbearable Weight of Recruitment</h3>
+                <div className="space-y-4">
+                  {MOCK_DATA.gulfCrisis.map((item, idx) => (
+                    <motion.div key={idx} variants={fadeUp} className="flex items-center gap-6 p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/10 flex items-center justify-center shrink-0 border border-red-500/20 shadow-inner">
+                        <item.icon className="w-6 h-6 text-red-400" />
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-white mb-1 tracking-tight">{item.metric}</div>
+                        <div className="text-sm text-slate-400 font-medium">{item.label}</div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Egypt Segment */}
+            <motion.div 
+              initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
+              variants={fadeSlideRight}
+              className="relative p-[1px] rounded-[2.5rem] bg-gradient-to-b from-cyan-500/40 to-blue-800/10"
+            >
+              <div className="absolute inset-0 bg-cyan-500/5 blur-3xl rounded-[3rem] -z-10" />
+              <div className="h-full p-10 lg:p-14 rounded-[2.5rem] bg-[#020617]/90 backdrop-blur-2xl">
+                <div className="inline-flex items-center gap-3 text-cyan-400 font-bold tracking-wide text-sm uppercase mb-8 bg-cyan-950/50 px-4 py-2 rounded-full border border-cyan-500/20">
+                  <Users className="w-4 h-4" /> The Egyptian Supply Crisis
+                </div>
+                <h3 className="text-3xl font-bold mb-10 text-white tracking-tight">A System on the Brink of "Brain Drain"</h3>
+                <div className="space-y-4">
+                  {MOCK_DATA.egyptCrisis.map((item, idx) => (
+                    <motion.div key={idx} variants={fadeUp} className="flex items-center gap-6 p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/10 flex items-center justify-center shrink-0 border border-cyan-500/20 shadow-inner">
+                        <item.icon className="w-6 h-6 text-cyan-400" />
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-white mb-1 tracking-tight">{item.metric}</div>
+                        <div className="text-sm text-slate-400 font-medium">{item.label}</div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. The Solution / Lean Canvas */}
+      <section className="py-40 relative z-10 px-6 border-t border-white/5 bg-[#040816]">
+        <div className="max-w-7xl mx-auto">
+          <motion.div 
+            initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            className="flex justify-between items-end mb-20 flex-wrap gap-8"
+          >
+            <div className="max-w-3xl">
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6 text-white leading-tight">The Asynchronous <br/><span className="text-cyan-400">Routing Engine</span></h2>
+              <p className="text-xl text-slate-400 font-light">Our validated Lean Canvas translated into a secure, hyper-efficient clinical workflow. Built exclusively for asynchronous, non-interventional diagnostics.</p>
+            </div>
+            <div className="hidden lg:block text-right">
+              <div className="text-6xl font-black text-white/5 flex items-center justify-end gap-4">
+                <Database className="w-16 h-16" />
+                <ArrowRight className="w-10 h-10" />
+                <Globe className="w-16 h-16" />
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+            className="grid md:grid-cols-2 gap-8"
+          >
+            {MOCK_DATA.leanCanvas.map((feature, idx) => (
+              <motion.div
+                key={idx}
+                variants={fadeUp}
+                className="relative group p-10 rounded-[2rem] bg-gradient-to-b from-slate-800/30 to-slate-900/30 border border-slate-800 hover:border-cyan-500/40 transition-all duration-500 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/0 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 border border-slate-700 flex items-center justify-center mb-8 shadow-2xl group-hover:bg-cyan-950/80 group-hover:border-cyan-500/50 transition-all duration-500">
+                    <feature.icon className="w-8 h-8 text-cyan-400 group-hover:text-white transition-colors" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">{feature.title}</h3>
+                  <p className="text-slate-400 leading-relaxed text-lg">{feature.description}</p>
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
 
-      {/* The Crisis & The Opportunity */}
-      <section className="py-32 bg-slate-900/50 border-y border-white/5 relative z-10 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold tracking-tight mb-4 text-white">The Macro-Economic Crisis</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto text-lg">A simultaneous collapse of supply and demand that traditional market mechanics are incapable of resolving.</p>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Gulf Collapse Card */}
-            <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.7 }}
-              className="p-8 lg:p-12 rounded-3xl bg-slate-950/80 border border-red-500/10 backdrop-blur-xl"
-            >
-              <div className="inline-flex items-center gap-2 text-red-400 font-semibold mb-6">
-                <AlertCircle className="w-5 h-5" /> The Gulf Market Collapse
-              </div>
-              <h3 className="text-2xl font-bold mb-8 text-white">The Unbearable Weight of Recruitment</h3>
-              <div className="space-y-6">
-                {MOCK_DATA.gulfCrisis.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
-                      <item.icon className="w-6 h-6 text-red-400" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white mb-1">{item.metric}</div>
-                      <div className="text-sm text-slate-400 font-medium">{item.label}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Egypt Crisis Card */}
-            <motion.div 
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="p-8 lg:p-12 rounded-3xl bg-slate-950/80 border border-cyan-500/10 backdrop-blur-xl"
-            >
-              <div className="inline-flex items-center gap-2 text-cyan-400 font-semibold mb-6">
-                <Users className="w-5 h-5" /> The Egyptian Supply Crisis
-              </div>
-              <h3 className="text-2xl font-bold mb-8 text-white">A System on the Brink of "Brain Drain"</h3>
-              <div className="space-y-6">
-                {MOCK_DATA.egyptCrisis.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center shrink-0">
-                      <item.icon className="w-6 h-6 text-cyan-400" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white mb-1">{item.metric}</div>
-                      <div className="text-sm text-slate-400 font-medium">{item.label}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Workflow Strategy (Lean Canvas) */}
-      <section className="py-32 relative z-10 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="max-w-3xl mb-16">
-            <h2 className="text-4xl font-bold tracking-tight mb-6 text-white">The Asynchronous Routing Engine</h2>
-            <p className="text-xl text-slate-400">Our validated Lean Canvas translated into a secure, hyper-efficient clinical workflow. Built exclusively for asynchronous, non-interventional diagnostics.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {MOCK_DATA.leanCanvas.map((feature, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="p-8 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-900/50 border border-slate-800 hover:border-cyan-500/30 transition-colors group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center mb-6 shadow-xl group-hover:bg-cyan-950/50 transition-colors">
-                  <feature.icon className="w-7 h-7 text-cyan-400" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-                <p className="text-slate-400 leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* JTBD Quotes */}
-      <section className="py-32 bg-slate-950 relative z-10 border-t border-white/5 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+      {/* 5. Trust & Evidence (JTBD & Primary Research) */}
+      <section className="py-40 bg-[#020617] relative z-10 border-t border-white/5 overflow-hidden">
+        {/* Glow behind quotes */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-cyan-900/20 blur-[120px] rounded-full pointer-events-none" />
         
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold tracking-tight mb-16 text-center text-white">
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <motion.h2 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="text-4xl md:text-5xl font-black tracking-tight mb-20 text-center text-white"
+          >
             Validating the Inevitable: <br/>
-            <span className="text-slate-400 font-medium">The Psychology of the Provider</span>
-          </h2>
+            <span className="text-slate-500 font-light italic">The Psychology of the Provider</span>
+          </motion.h2>
 
-          <div className="flex gap-6 overflow-x-auto pb-12 snap-x snap-mandatory scrollbar-hide">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="flex gap-8 overflow-x-auto pb-12 snap-x snap-mandatory scrollbar-hide"
+          >
             {MOCK_DATA.quotes.map((item, idx) => (
-              <motion.div
+              <div
                 key={idx}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="min-w-[320px] md:min-w-[400px] p-8 rounded-3xl bg-slate-900/80 border border-slate-800 snap-center shrink-0 flex flex-col justify-between"
+                className="min-w-[340px] md:min-w-[480px] p-10 rounded-[2rem] bg-slate-900/40 backdrop-blur-xl border border-slate-800 hover:border-cyan-500/30 transition-colors snap-center shrink-0 flex flex-col justify-between"
               >
-                <div className="mb-8">
-                  <span className="text-5xl text-cyan-900 mb-4 block leading-none saturate-50">"</span>
-                  <p className="text-lg text-slate-300 italic">"{item.quote}"</p>
+                <div className="mb-10">
+                  <span className="text-6xl text-cyan-900/50 mb-4 block leading-none saturate-[0.2] font-serif">"</span>
+                  <p className="text-xl text-slate-300 font-medium leading-relaxed">"{item.quote}"</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
-                    <Stethoscope className="w-5 h-5 text-slate-400" />
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner">
+                    <Stethoscope className="w-6 h-6 text-cyan-500" />
                   </div>
-                  <span className="font-semibold text-cyan-400 text-sm">{item.role}</span>
+                  <span className="font-bold text-white tracking-wide">{item.role}</span>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
       
       {/* Footer / Final CTA */}
-      <footer className="py-20 bg-slate-950 border-t border-slate-900 px-6">
-         <div className="max-w-7xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-8 text-white">Execute the Pitch Role-Play</h2>
+      <footer className="relative py-32 bg-[#000000] border-t border-slate-900 px-6 overflow-hidden">
+         {/* Footer glowing orb */}
+         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[600px] h-[300px] bg-blue-600/20 blur-[100px] rounded-[100%] pointer-events-none" />
+
+         <motion.div 
+           initial={{ opacity: 0, y: 50 }}
+           whileInView={{ opacity: 1, y: 0 }}
+           viewport={{ once: true }}
+           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+           className="max-w-4xl mx-auto text-center relative z-10"
+         >
+            <h2 className="text-3xl md:text-5xl font-black mb-10 text-white tracking-tight">Execute the Live Pitch Role-Play</h2>
             <button 
               onClick={onLogin}
-              className="inline-flex items-center gap-3 px-10 py-5 bg-white text-slate-950 font-bold text-lg rounded-full shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:scale-105 transition-transform duration-300"
+              className="group inline-flex items-center gap-4 px-12 py-6 bg-white text-slate-950 font-black text-xl rounded-full shadow-[0_0_50px_rgba(255,255,255,0.15)] hover:shadow-[0_0_80px_rgba(255,255,255,0.3)] hover:scale-105 transition-all duration-500"
             >
-              Initiate Provider Portal Demo <ChevronRight className="w-6 h-6" />
+              Initiate Provider Portal Demo 
+              <span className="w-10 h-10 rounded-full bg-slate-950 flex items-center justify-center group-hover:bg-cyan-500 transition-colors">
+                <ChevronRight className="w-6 h-6 text-white" />
+              </span>
             </button>
-            <p className="mt-8 text-slate-500 text-sm max-w-xl mx-auto">
-              Clicking this button triggers the live Zoom consultation role-play and bridges the marketing interface directly into the operational dashboard, seamlessly executing the Master Blueprint.
+            <p className="mt-10 text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
+              Clicking this button triggers the live Zoom consultation role-play and bridges the marketing interface directly into the operational dashboard. Seamlessly fulfilling the Master Blueprint.
             </p>
-         </div>
+         </motion.div>
       </footer>
     </div>
   );
 };
 
+// --- PORTAL DASHBOARD (SIMULATED SECURE ZONE) ---
+
 const PortalDashboard = ({ onLogout }: { onLogout: () => void }) => {
   return (
-    <div className="min-h-screen bg-[#070B14] text-slate-200 font-sans flex overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
+      animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="min-h-screen bg-[#060910] text-slate-200 font-sans flex overflow-hidden selection:bg-cyan-500/30"
+    >
       {/* Dashboard Sidebar */}
-      <aside className="w-64 border-r border-[#1E293B] bg-[#0A0F1C] flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-6 border-b border-[#1E293B]">
-          <div className="flex items-center gap-2">
-            <Stethoscope className="text-cyan-500 w-5 h-5" />
-            <span className="text-lg font-bold text-white tracking-tight">CareOnCall Provider</span>
+      <aside className="w-72 border-r border-white/5 bg-[#0a0e17]/80 backdrop-blur-2xl flex flex-col shrink-0 relative z-20">
+        <div className="h-20 flex items-center px-8 border-b border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Stethoscope className="text-cyan-400 w-6 h-6" />
+              <div className="absolute top-0 right-0 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
+            </div>
+            <span className="text-xl font-bold text-white tracking-tight">CareOn<span className="text-cyan-400 font-light">Call</span></span>
           </div>
         </div>
         
-        <div className="p-4">
-          <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Main Menu</div>
-          <div className="space-y-1">
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-cyan-900/20 text-cyan-400 rounded-lg font-medium border border-cyan-800/30">
-              <Activity className="w-4 h-4" /> Asynchronous Queue
+        <div className="p-6">
+          <div className="px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Operations</div>
+          <div className="space-y-2">
+            <button className="w-full flex items-center gap-4 px-4 py-3.5 bg-gradient-to-r from-cyan-900/40 to-transparent text-cyan-300 rounded-xl font-semibold border border-cyan-800/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+              <Activity className="w-5 h-5" /> Asynchronous Queue
             </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:bg-white/5 hover:text-slate-200 rounded-lg font-medium transition-colors">
-              <FileText className="w-4 h-4" /> Advisory Reports
+            <button className="w-full flex items-center gap-4 px-4 py-3.5 text-slate-400 hover:bg-white/5 hover:text-white rounded-xl font-medium transition-colors">
+              <FileText className="w-5 h-5" /> Advisory Reports
             </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:bg-white/5 hover:text-slate-200 rounded-lg font-medium transition-colors">
-              <DollarSign className="w-4 h-4" /> Ledger & Payouts
+            <button className="w-full flex items-center gap-4 px-4 py-3.5 text-slate-400 hover:bg-white/5 hover:text-white rounded-xl font-medium transition-colors">
+              <DollarSign className="w-5 h-5" /> Ledger & Payouts
             </button>
           </div>
         </div>
 
-        <div className="mt-auto p-4 border-t border-[#1E293B]">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-slate-900/50 border border-slate-800">
-             <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">
-               <span className="text-xs font-bold text-slate-300">DA</span>
+        <div className="mt-auto p-6 border-t border-white/5 bg-[#080b12]">
+          <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-white/5 border border-white/10 shadow-inner">
+             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-600 to-blue-600 flex items-center justify-center p-[2px]">
+               <div className="w-full h-full bg-[#0a0e17] rounded-full flex items-center justify-center">
+                 <span className="text-sm font-bold text-white">DA</span>
+               </div>
              </div>
              <div className="flex-1 min-w-0">
-               <div className="text-sm font-semibold text-white truncate">Dr. Ahmed</div>
-               <div className="text-xs text-slate-400 truncate">Ain Shams Radiology</div>
+               <div className="text-sm font-bold text-white truncate">Dr. Ahmed</div>
+               <div className="text-xs text-cyan-400 font-medium truncate">Ain Shams Radiology</div>
              </div>
           </div>
           <button 
             onClick={onLogout}
-            className="w-full mt-3 flex items-center justify-center gap-2 text-xs text-slate-500 hover:text-white py-2"
+            className="w-full mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 py-3 rounded-xl transition-colors border border-transparent hover:border-white/10"
           >
-             Exit Demo Portal
+             Secure Sign Out
           </button>
         </div>
       </aside>
 
       {/* Dashboard Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-gradient-to-br from-[#070B14] to-[#0A0F1C]">
-         <header className="h-16 flex items-center justify-between px-8 border-b border-[#1E293B] shrink-0 sticky top-0 bg-[#070B14]/80 backdrop-blur-md z-10">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-white">Operational Terminal</h1>
-              <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                Zero-Trust Tunnel Active
-              </span>
+      <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#0a0e17] via-[#060910] to-[#04060a]">
+         <header className="h-20 flex items-center justify-between px-10 border-b border-white/5 shrink-0 sticky top-0 bg-[#060910]/80 backdrop-blur-xl z-10">
+            <div className="flex items-center gap-6">
+              <h1 className="text-2xl font-bold text-white tracking-tight">Active Terminal</h1>
+              <div className="px-4 py-1.5 text-xs font-bold bg-emerald-950/40 text-emerald-400 rounded-full border border-emerald-500/20 flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_5px_rgba(16,185,129,0.8)]" />
+                ZERO-TRUST SECURE
+              </div>
             </div>
             <div className="flex items-center gap-4">
-               <div className="px-4 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-sm flex items-center gap-2">
-                 <span className="text-slate-400">Next Payout:</span>
-                 <span className="font-bold text-white">May 01</span>
+               <div className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm flex items-center gap-3 backdrop-blur-md">
+                 <span className="text-slate-400 font-medium tracking-wide">NEXT PAYOUT:</span>
+                 <span className="font-bold text-white uppercase">May 01</span>
                </div>
             </div>
          </header>
 
-         <div className="p-8 max-w-7xl mx-auto w-full space-y-8">
+         <div className="p-10 max-w-7xl mx-auto w-full space-y-10">
             {/* Top Metrics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <motion.div 
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+              className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            >
                <motion.div 
-                 initial={{ opacity: 0, y: 10 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 className="p-6 rounded-2xl bg-[#0F172A] border border-[#1E293B] shadow-lg relative overflow-hidden group"
+                 variants={fadeUp}
+                 className="p-8 rounded-[2rem] bg-gradient-to-br from-slate-800/40 to-[#0a0e17] border border-white/10 shadow-2xl relative overflow-hidden group"
                >
-                 <div className="absolute top-0 right-0 p-4 opacity-10 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform">
-                   <DollarSign className="w-24 h-24 text-cyan-400" />
+                 <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-700">
+                   <DollarSign className="w-32 h-32 text-cyan-400" />
                  </div>
                  <div className="relative z-10">
-                   <div className="text-sm font-semibold text-slate-400 mb-2 flex items-center gap-2">
-                     <DollarSign className="w-4 h-4 text-cyan-400" /> Current USD Balance
+                   <div className="text-sm font-bold tracking-widest text-slate-400 uppercase mb-4 flex items-center gap-3">
+                     <DollarSign className="w-5 h-5 text-cyan-400" /> Current Payout
                    </div>
-                   <div className="text-4xl font-bold text-white tracking-tight">{MOCK_DATA.dashboard.usdBalance}</div>
-                   <div className="text-xs text-slate-500 mt-2 font-mono">Routing directly to Payoneer</div>
+                   <div className="text-5xl font-black text-white tracking-tighter mb-2 drop-shadow-md">{MOCK_DATA.dashboard.usdBalance}</div>
+                   <div className="text-sm text-cyan-500/80 font-medium inline-flex items-center gap-2 bg-cyan-950/30 px-3 py-1 rounded-md border border-cyan-500/20">
+                      <Lock className="w-3 h-3" /> Routing to Offshore Payoneer
+                   </div>
                  </div>
                </motion.div>
 
                <motion.div 
-                 initial={{ opacity: 0, y: 10 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 transition={{ delay: 0.1 }}
-                 className="p-6 rounded-2xl bg-[#0F172A] border border-[#1E293B] shadow-lg"
+                 variants={fadeUp}
+                 className="p-8 rounded-[2rem] bg-[#0a0e17]/80 backdrop-blur-xl border border-white/10 shadow-xl"
                >
-                 <div className="text-sm font-semibold text-slate-400 mb-2 flex items-center gap-2">
-                     <Activity className="w-4 h-4 text-blue-400" /> SLA Fulfillment
+                 <div className="text-sm font-bold tracking-widest text-slate-400 uppercase mb-4 flex items-center gap-3">
+                     <Activity className="w-5 h-5 text-emerald-400" /> SLA Fulfillment
                  </div>
-                 <div className="text-4xl font-bold text-white tracking-tight">100%</div>
-                 <div className="text-xs text-emerald-400 mt-2 font-medium">All diagnostic reads within SLA</div>
+                 <div className="text-5xl font-black text-white tracking-tighter mb-2">100%</div>
+                 <div className="text-sm text-emerald-400 font-medium mt-3">All reads within 60m strict SLA</div>
                </motion.div>
 
                <motion.div 
-                 initial={{ opacity: 0, y: 10 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 transition={{ delay: 0.2 }}
-                 className="p-6 rounded-2xl bg-[#0F172A] border border-[#1E293B] shadow-lg"
+                 variants={fadeUp}
+                 className="p-8 rounded-[2rem] bg-[#0a0e17]/80 backdrop-blur-xl border border-white/10 shadow-xl"
                >
-                 <div className="text-sm font-semibold text-slate-400 mb-2 flex items-center gap-2">
-                     <FileText className="w-4 h-4 text-purple-400" /> Monthly Volume
+                 <div className="text-sm font-bold tracking-widest text-slate-400 uppercase mb-4 flex items-center gap-3">
+                     <FileText className="w-5 h-5 text-purple-400" /> Monthly Volume
                  </div>
-                 <div className="text-4xl font-bold text-white tracking-tight">231</div>
-                 <div className="text-xs text-slate-500 mt-2">Completed reads this month</div>
+                 <div className="text-5xl font-black text-white tracking-tighter mb-2">231</div>
+                 <div className="text-sm text-slate-400 font-medium mt-3">Completed advisory reports</div>
                </motion.div>
-            </div>
+            </motion.div>
 
             {/* Main Queue Table */}
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-[#0F172A] rounded-2xl border border-[#1E293B] shadow-lg overflow-hidden"
+              transition={{ delay: 0.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-[#0a0e17]/90 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden"
             >
-              <div className="p-6 border-b border-[#1E293B] flex items-center justify-between bg-slate-900/50">
+              <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                 <div>
-                  <h3 className="text-lg font-bold text-white">Pending Asynchronous Queue</h3>
-                  <p className="text-sm text-slate-400">Encrypted DICOM packets waiting for advisory review.</p>
+                  <h3 className="text-2xl font-bold text-white tracking-tight mb-2">Inbound DICOM Queue</h3>
+                  <p className="text-slate-400">Encrypted, anonymized datasets awaiting your sub-specialized review.</p>
                 </div>
-                <button className="px-4 py-2 text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors shadow-[0_0_15px_rgba(8,145,178,0.3)]">
-                  Refresh Queue
+                <button className="px-6 py-3 text-sm font-bold tracking-wide bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl transition-all shadow-[0_0_20px_rgba(8,145,178,0.4)] hover:shadow-[0_0_30px_rgba(8,145,178,0.6)]">
+                  Refresh Tunnel
                 </button>
               </div>
               
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-[#0A0F1C] text-slate-400 uppercase tracking-wider text-xs border-b border-[#1E293B]">
+                  <thead className="bg-black/20 text-slate-400 uppercase tracking-widest text-xs font-bold border-b border-white/5">
                     <tr>
-                      <th className="px-6 py-4 font-semibold">Packet ID</th>
-                      <th className="px-6 py-4 font-semibold">Diagnostic Type</th>
-                      <th className="px-6 py-4 font-semibold">Origin Node</th>
-                      <th className="px-6 py-4 font-semibold">Time Elapsed</th>
-                      <th className="px-6 py-4 font-semibold">Yield (USD)</th>
-                      <th className="px-6 py-4 font-semibold text-right">Action</th>
+                      <th className="px-8 py-5">Hash ID</th>
+                      <th className="px-8 py-5">Scan Type</th>
+                      <th className="px-8 py-5">Originating Payer</th>
+                      <th className="px-8 py-5">Aged</th>
+                      <th className="px-8 py-5">Yield (USD)</th>
+                      <th className="px-8 py-5 text-right">Action Gate</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1E293B]">
+                  <tbody className="divide-y divide-white/5">
                     {MOCK_DATA.dashboard.pendingReads.map((read, idx) => (
-                      <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="px-6 py-4 font-mono text-cyan-400">{read.id}</td>
-                        <td className="px-6 py-4">
-                          <div className="text-white font-medium">{read.type}</div>
-                          {read.urgency === "STAT" && (
-                            <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold bg-red-500/20 text-red-400 rounded border border-red-500/30">STAT PRIORITY</span>
+                      <motion.tr 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 + idx * 0.1, duration: 0.5 }}
+                        key={idx} 
+                        className="hover:bg-cyan-900/10 transition-colors group cursor-pointer"
+                      >
+                        <td className="px-8 py-6 font-mono text-cyan-400 font-semibold">{read.id}</td>
+                        <td className="px-8 py-6">
+                          <div className="text-white font-bold tracking-wide mb-1.5">{read.type}</div>
+                          {read.urgency === "STAT" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black bg-red-500/20 text-red-400 rounded-md border border-red-500/30 tracking-widest">
+                              <span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-ping" />
+                              STAT
+                            </span>
+                          ) : read.urgency === "Urgent" ? (
+                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black bg-orange-500/20 text-orange-400 rounded-md border border-orange-500/30 tracking-widest">
+                               URGENT
+                             </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold bg-slate-800 text-slate-400 rounded-md border border-slate-700 tracking-widest">
+                               ROUTINE
+                            </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-slate-300">{read.hospital}</td>
-                        <td className="px-6 py-4 text-slate-400">{read.time}</td>
-                        <td className="px-6 py-4 font-mono font-bold text-white">{read.fee}</td>
-                        <td className="px-6 py-4 text-right">
-                          <button className="px-4 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white rounded-lg transition-colors group">
-                            Review DICOM <ChevronRight className="w-3 h-3 inline-block ml-1 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                        <td className="px-8 py-6 text-slate-300 font-medium">{read.hospital}</td>
+                        <td className="px-8 py-6 text-slate-400 font-mono">{read.time}</td>
+                        <td className="px-8 py-6 font-mono font-black text-emerald-400 text-base">{read.fee}</td>
+                        <td className="px-8 py-6 text-right">
+                          <button className="px-6 py-2.5 text-xs font-bold tracking-widest bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all group-hover:border-cyan-500/50 group-hover:bg-cyan-900/40">
+                            VIEW DICOM <ChevronRight className="w-4 h-4 inline-block ml-1 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                           </button>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="p-4 border-t border-[#1E293B] bg-slate-900/30 text-center text-xs text-slate-500">
-                 End of queue. All data structures conform to Saudi PDPL and HIPAA data residency requirements.
+              <div className="p-5 border-t border-white/5 bg-black/40 text-center text-xs font-medium tracking-wide text-slate-500">
+                 End of active queue. Framework certified compliant with Saudi PDPL & cross-border HIPAA standards.
               </div>
             </motion.div>
          </div>
       </main>
-    </div>
+    </motion.div>
   );
 };
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'marketing' | 'portal'>('marketing');
 
-  // Ensure window starts at top when view changes
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentView]);
 
   return (
     <AnimatePresence mode="wait">
       {currentView === 'marketing' ? (
-        <motion.div
-          key="marketing"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.4 }}
-        >
+        <motion.div key="marketing" className="w-full h-full">
           <MarketingView onLogin={() => setCurrentView('portal')} />
         </motion.div>
       ) : (
-        <motion.div
-          key="portal"
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
-        >
+        <motion.div key="portal" className="w-full h-full">
           <PortalDashboard onLogout={() => setCurrentView('marketing')} />
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
-
