@@ -8,6 +8,88 @@ import {
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, Float, Sparkles, Stars, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import Tilt from 'react-parallax-tilt';
+
+// --- CUSTOM UI/UX COMPONENTS ---
+
+const CustomCursor = () => {
+  const [mousePosition, setMousePosition] = useState({ x: -100, y: -100 });
+  const [isHovering, setIsHovering] = useState(false);
+
+  useEffect(() => {
+    const updateMousePosition = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+      
+      // Check if hovering over clickable elements
+      const target = e.target as HTMLElement;
+      const isClickable = window.getComputedStyle(target).cursor === 'pointer' || target.tagName.toLowerCase() === 'button' || target.tagName.toLowerCase() === 'a';
+      setIsHovering(isClickable);
+    };
+    window.addEventListener("mousemove", updateMousePosition);
+    return () => {
+      window.removeEventListener("mousemove", updateMousePosition);
+    };
+  }, []);
+
+  return (
+    <div className="hidden md:block">
+      <motion.div
+        className="fixed top-0 left-0 w-10 h-10 rounded-full border border-cyan-400 pointer-events-none z-[100] mix-blend-screen bg-cyan-400/10 backdrop-blur-[1px]"
+        animate={{
+          x: mousePosition.x - 20,
+          y: mousePosition.y - 20,
+          scale: isHovering ? 1.5 : 1,
+          backgroundColor: isHovering ? "rgba(34, 211, 238, 0.2)" : "rgba(34, 211, 238, 0.1)",
+        }}
+        transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.5 }}
+      />
+      <motion.div
+        className="fixed top-0 left-0 w-2 h-2 bg-cyan-300 rounded-full pointer-events-none z-[100] shadow-[0_0_10px_#67e8f9]"
+        animate={{
+          x: mousePosition.x - 4,
+          y: mousePosition.y - 4,
+          scale: isHovering ? 0 : 1
+        }}
+        transition={{ type: "spring", stiffness: 500, damping: 28, mass: 0.1 }}
+      />
+    </div>
+  );
+};
+
+const SpotlightCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => {
+  const divRef = useRef<HTMLDivElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [opacity, setOpacity] = useState(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current || isFocused) return;
+    const div = divRef.current;
+    const rect = div.getBoundingClientRect();
+    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  return (
+    <div
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      onFocus={() => { setIsFocused(true); setOpacity(1); }}
+      onBlur={() => { setIsFocused(false); setOpacity(0); }}
+      onMouseEnter={() => setOpacity(1)}
+      onMouseLeave={() => setOpacity(0)}
+      className={`relative overflow-hidden ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 z-0 bg-transparent rounded-inherit"
+        style={{
+          opacity,
+          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(34,211,238,0.15), transparent 40%)`,
+        }}
+      />
+      <div className="relative z-10 h-full w-full">{children}</div>
+    </div>
+  );
+};
 
 // --- MOCK DATA ---
 const MOCK_DATA = {
@@ -605,46 +687,48 @@ const MarketingView = ({ onLogin }: { onLogin: () => void }) => {
              >
                <div className="flex gap-8 animate-marquee pr-8 items-stretch shrink-0 pointer-events-auto">
                  {MOCK_DATA.quotes.map((item, idx) => (
-                   <div
-                     key={`q1-${idx}`}
-                     className="w-[340px] md:w-[480px] p-10 rounded-[2rem] bg-slate-900/40 backdrop-blur-xl border border-slate-800 shrink-0 flex flex-col justify-between"
-                   >
-                     <div className="mb-10">
-                       <span className="text-6xl text-cyan-900/50 mb-4 block leading-none saturate-[0.2] font-serif">"</span>
-                       <p className="text-2xl text-cyan-50 font-serif italic tracking-wide leading-relaxed">"{item.quote}"</p>
-                     </div>
-                     <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner overflow-hidden">
-                         <div className="w-full h-full bg-cyan-900/40 flex items-center justify-center relative">
-                            <Stethoscope className="w-6 h-6 text-cyan-400 relative z-10" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent" />
+                   <div key={`q1-${idx}`} className="w-[340px] md:w-[480px] shrink-0">
+                     <Tilt tiltMaxAngleX={5} tiltMaxAngleY={5} glareEnable={false} scale={1.02} transitionSpeed={2000} className="h-full">
+                       <SpotlightCard className="h-full p-10 rounded-[2rem] bg-slate-900/40 backdrop-blur-xl border border-slate-800 flex flex-col justify-between group cursor-grab">
+                         <div className="mb-10">
+                           <span className="text-6xl text-cyan-900/50 mb-4 block leading-none saturate-[0.2] font-serif group-hover:text-cyan-500/30 transition-colors duration-500">"</span>
+                           <p className="text-2xl text-cyan-50 font-serif italic tracking-wide leading-relaxed">"{item.quote}"</p>
                          </div>
-                       </div>
-                       <span className="font-bold text-white tracking-wide">{item.role}</span>
-                     </div>
+                         <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner overflow-hidden">
+                             <div className="w-full h-full bg-cyan-900/40 flex items-center justify-center relative">
+                                <Stethoscope className="w-6 h-6 text-cyan-400 relative z-10" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent" />
+                             </div>
+                           </div>
+                           <span className="font-bold text-white tracking-wide">{item.role}</span>
+                         </div>
+                       </SpotlightCard>
+                     </Tilt>
                    </div>
                  ))}
                </div>
                
                <div className="flex gap-8 animate-marquee pr-8 items-stretch shrink-0 pointer-events-auto" aria-hidden="true">
                  {MOCK_DATA.quotes.map((item, idx) => (
-                   <div
-                     key={`q2-${idx}`}
-                     className="w-[340px] md:w-[480px] p-10 rounded-[2rem] bg-slate-900/40 backdrop-blur-xl border border-slate-800 shrink-0 flex flex-col justify-between"
-                   >
-                     <div className="mb-10">
-                       <span className="text-6xl text-cyan-900/50 mb-4 block leading-none saturate-[0.2] font-serif">"</span>
-                       <p className="text-2xl text-cyan-50 font-serif italic tracking-wide leading-relaxed">"{item.quote}"</p>
-                     </div>
-                     <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner overflow-hidden">
-                         <div className="w-full h-full bg-cyan-900/40 flex items-center justify-center relative">
-                            <Stethoscope className="w-6 h-6 text-cyan-400 relative z-10" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent" />
+                   <div key={`q2-${idx}`} className="w-[340px] md:w-[480px] shrink-0">
+                     <Tilt tiltMaxAngleX={5} tiltMaxAngleY={5} glareEnable={false} scale={1.02} transitionSpeed={2000} className="h-full">
+                       <SpotlightCard className="h-full p-10 rounded-[2rem] bg-slate-900/40 backdrop-blur-xl border border-slate-800 flex flex-col justify-between group cursor-grab">
+                         <div className="mb-10">
+                           <span className="text-6xl text-cyan-900/50 mb-4 block leading-none saturate-[0.2] font-serif group-hover:text-cyan-500/30 transition-colors duration-500">"</span>
+                           <p className="text-2xl text-cyan-50 font-serif italic tracking-wide leading-relaxed">"{item.quote}"</p>
                          </div>
-                       </div>
-                       <span className="font-bold text-white tracking-wide">{item.role}</span>
-                     </div>
+                         <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner overflow-hidden">
+                             <div className="w-full h-full bg-cyan-900/40 flex items-center justify-center relative">
+                                <Stethoscope className="w-6 h-6 text-cyan-400 relative z-10" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent" />
+                             </div>
+                           </div>
+                           <span className="font-bold text-white tracking-wide">{item.role}</span>
+                         </div>
+                       </SpotlightCard>
+                     </Tilt>
                    </div>
                  ))}
                </div>
@@ -896,16 +980,19 @@ export default function App() {
   }, [currentView]);
 
   return (
-    <AnimatePresence mode="wait">
-      {currentView === 'marketing' ? (
-        <motion.div key="marketing" className="w-full h-full">
-          <MarketingView onLogin={() => setCurrentView('portal')} />
-        </motion.div>
-      ) : (
-        <motion.div key="portal" className="w-full h-full">
-          <PortalDashboard onLogout={() => setCurrentView('marketing')} />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="w-full h-full cursor-none [&_*]:cursor-none">
+      <CustomCursor />
+      <AnimatePresence mode="wait">
+        {currentView === 'marketing' ? (
+          <motion.div key="marketing" className="w-full h-full">
+            <MarketingView onLogin={() => setCurrentView('portal')} />
+          </motion.div>
+        ) : (
+          <motion.div key="portal" className="w-full h-full">
+            <PortalDashboard onLogout={() => setCurrentView('marketing')} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
