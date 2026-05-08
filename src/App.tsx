@@ -1,55 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Stethoscope, ShieldCheck, Lock, Wallet, FileText, Activity, 
-  Settings, List, ArrowRight, CheckCircle, Network, GraduationCap, 
-  Sliders, AlertTriangle, Scan, Check, CheckCircle2, ChevronRight,
-  LogOut, Clock, Globe, Briefcase, ChevronLeft, CreditCard,
-  Building2, Maximize
+  Activity, ShieldCheck, Lock, CheckCircle, Wallet, FileText, 
+  ArrowRight, Clock, Building, GraduationCap, PlayCircle, LogOut, 
+  Search, Bell, Settings, ZoomIn, Maximize, Contrast, Download, 
+  AlertTriangle, User, MapPin, Mail, Phone, ChevronRight 
 } from 'lucide-react';
 
 type ViewState = 'landing' | 'provider-login' | 'provider-dashboard' | 'scan-simulation';
+type TabState = 'home' | 'vetting' | 'pricing' | 'team' | 'contact';
 
-const FADE_UP: any = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
-};
+type AppProps = {};
 
-const STAGGER: any = {
-  hidden: { opacity: 0 },
-  show: { transition: { staggerChildren: 0.1 } }
-};
-
-// --- MAIN APP COMPONENT ---
-export default function App() {
+export default function App(props: AppProps) {
   const [currentView, setCurrentView] = useState<ViewState>('landing');
+  const [activeTab, setActiveTab] = useState<TabState>('home');
   const [walletBalance, setWalletBalance] = useState(1200);
 
+  // Scroll to top on view/tab change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentView, activeTab]);
+
   return (
-    <div className="font-sans min-h-screen text-slate-800 bg-slate-50 overflow-x-hidden selection:bg-emerald-200 selection:text-emerald-900">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-emerald-200 selection:text-teal-900">
       <AnimatePresence mode="wait">
         {currentView === 'landing' && (
-          <LandingView key="landing" onLogin={() => setCurrentView('provider-login')} />
-        )}
-        {currentView === 'provider-login' && (
-          <ProviderLoginView key="login" onEnter={() => setCurrentView('provider-dashboard')} />
-        )}
-        {currentView === 'provider-dashboard' && (
-          <ProviderDashboardView 
-            key="dashboard" 
-            balance={walletBalance} 
-            onOpenScan={() => setCurrentView('scan-simulation')} 
-            onLogout={() => setCurrentView('landing')} 
+          <LandingView 
+            key="landing" 
+            setView={setCurrentView} 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
           />
         )}
+        {currentView === 'provider-login' && (
+          <LoginView key="login" setView={setCurrentView} />
+        )}
+        {currentView === 'provider-dashboard' && (
+          <DashboardView key="dashboard" setView={setCurrentView} walletBalance={walletBalance} />
+        )}
         {currentView === 'scan-simulation' && (
-          <ScanSimulationView 
-            key="scan" 
-            onComplete={() => { 
-              setWalletBalance(b => b + 30); 
-              setCurrentView('provider-dashboard'); 
-            }} 
-            onCancel={() => setCurrentView('provider-dashboard')} 
+          <SimulationView 
+            key="simulation" 
+            setView={setCurrentView} 
+            walletBalance={walletBalance} 
+            setWalletBalance={setWalletBalance} 
           />
         )}
       </AnimatePresence>
@@ -57,624 +52,775 @@ export default function App() {
   );
 }
 
-// --- VIEW 1: LANDING PAGE ---
-const LandingView = ({ onLogin }: { onLogin: () => void }) => {
+// ==========================================
+// VIEW 1: B2B ENTERPRISE LANDING PAGE
+// ==========================================
+function LandingView({ 
+  setView, activeTab, setActiveTab 
+}: { 
+  setView: (v: ViewState) => void, 
+  activeTab: TabState, 
+  setActiveTab: (t: TabState) => void 
+}) {
   return (
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      exit={{ opacity: 0, filter: "blur(10px)" }}
-      className="w-full flex flex-col"
+      exit={{ opacity: 0 }}
+      className="flex flex-col min-h-screen bg-slate-50"
     >
-      {/* Sticky Navbar */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-teal-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center gap-12">
-          <div className="flex items-center gap-2">
-            <div className="bg-emerald-100 p-2 rounded-xl">
-              <Stethoscope className="text-emerald-600 w-6 h-6" />
+      {/* STICKY NAVBAR */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-teal-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div 
+            className="flex items-center gap-2 cursor-pointer" 
+            onClick={() => setActiveTab('home')}
+          >
+            <div className="bg-emerald-600 p-2 rounded-lg shadow-sm">
+              <Activity className="text-white w-6 h-6" />
             </div>
-            <span className="text-2xl font-extrabold tracking-tight text-teal-900">
-              CareOnCall
-            </span>
+            <span className="text-2xl font-extrabold text-teal-900 tracking-tight">CareOnCall</span>
           </div>
           
-          <div className="hidden md:flex items-center gap-8 flex-1">
-            <a href="#" className="text-sm font-semibold text-slate-600 hover:text-emerald-600 transition-colors border-b-2 border-transparent hover:border-emerald-600 py-2">Clinical Workflow</a>
-            <a href="#" className="text-sm font-semibold text-slate-600 hover:text-emerald-600 transition-colors border-b-2 border-transparent hover:border-emerald-600 py-2">Compliance & Legal</a>
-            <a href="#" className="text-sm font-semibold text-slate-600 hover:text-emerald-600 transition-colors border-b-2 border-transparent hover:border-emerald-600 py-2">Enterprise Pricing</a>
+          {/* Navigation Links */}
+          <div className="hidden lg:flex items-center gap-6 font-medium text-slate-600">
+            {[
+              { id: 'home', label: 'Home' },
+              { id: 'vetting', label: 'How We Choose Doctors' },
+              { id: 'pricing', label: 'Enterprise Pricing' },
+              { id: 'team', label: 'Our Team' },
+              { id: 'contact', label: 'Contact Us' }
+            ].map((tab) => (
+              <button 
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabState)}
+                className={`transition-colors whitespace-nowrap px-3 py-2 rounded-lg ${
+                  activeTab === tab.id 
+                    ? 'text-teal-900 bg-teal-50 font-bold' 
+                    : 'hover:text-emerald-600 hover:bg-slate-50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-
-          <button 
-            onClick={onLogin}
-            className="ml-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-[0_4px_14px_0_rgba(5,150,105,0.39)] transition-all transform hover:-translate-y-0.5"
+          
+          <motion.button 
+            whileHover={{ scale: 1.05 }} 
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setView('provider-login')}
+            className="bg-teal-800 hover:bg-teal-900 text-white px-6 py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center gap-2"
           >
-            Provider Portal
-          </button>
+            Provider Portal <ArrowRight className="w-4 h-4" />
+          </motion.button>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-40 pb-20 px-6 relative overflow-hidden bg-gradient-to-b from-teal-50/50 to-slate-50">
-        <div className="absolute right-0 top-0 w-1/2 h-full bg-emerald-100/30 rounded-l-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/4" />
-        
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
-          <motion.div 
-            className="flex-1 text-left"
-            variants={STAGGER} initial="hidden" animate="show"
-          >
-            <motion.div variants={FADE_UP} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/50 border border-emerald-200 text-emerald-800 text-sm font-bold mb-6 backdrop-blur-sm">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+      {/* DYNAMIC TAB CONTENT */}
+      <main className="flex-1">
+        <AnimatePresence mode="wait">
+          {activeTab === 'home' && <HomeTab key="home" />}
+          {activeTab === 'vetting' && <VettingTab key="vetting" />}
+          {activeTab === 'pricing' && <PricingTab key="pricing" />}
+          {activeTab === 'team' && <TeamTab key="team" />}
+          {activeTab === 'contact' && <ContactTab key="contact" />}
+        </AnimatePresence>
+      </main>
+
+    </motion.div>
+  );
+}
+
+// --- TAB 1: HOME ---
+function HomeTab() {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}
+    >
+      {/* HERO SECTION */}
+      <section className="relative pt-24 pb-32 overflow-hidden bg-gradient-to-b from-teal-50/50 to-slate-50">
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/40 via-transparent to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col lg:flex-row items-center gap-16">
+          
+          <div className="flex-1">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/80 border border-emerald-200 text-emerald-800 font-semibold text-sm mb-6">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
               Doctors as a Service (DaaS)
-            </motion.div>
-            
-            <motion.h1 variants={FADE_UP} className="text-5xl md:text-6xl font-extrabold tracking-tight text-teal-950 mb-6 leading-[1.1]">
-              Instant Specialist <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Infrastructure.</span>
-            </motion.h1>
-            
-            <motion.p variants={FADE_UP} className="text-lg text-slate-600 mb-10 max-w-xl leading-relaxed">
-              The Saudi health sector is facing a projected 15,000+ specialist deficit. Stop bleeding capital on 6-month recruitment cycles and visa delays. Seamlessly integrate board-certified Egyptian specialists directly into your hospital's EHR within 48 hours.
-            </motion.p>
-            
-            <motion.div variants={FADE_UP} className="flex flex-col sm:flex-row gap-4">
-              <button className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-[0_8px_30px_rgb(5,150,105,0.3)] transition-all hover:-translate-y-1 flex items-center justify-center gap-2">
-                Integrate Today <ArrowRight className="w-5 h-5" />
-              </button>
-              <button className="px-8 py-4 bg-white border-2 border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 text-teal-800 font-bold rounded-xl transition-all shadow-sm">
-                Calculate Hospital ROI
-              </button>
-            </motion.div>
-          </motion.div>
-
-          <motion.div 
-            className="flex-1 w-full relative h-[400px] flex items-center justify-center"
-            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}
-          >
-            {/* Animated Data Bridge Graphic */}
-            <div className="relative w-full max-w-md h-64 bg-white/50 backdrop-blur-xl border border-teal-100 rounded-3xl shadow-xl flex items-center p-8">
-               <div className="w-full relative flex items-center justify-between">
-                 {/* Connection Track */}
-                 <div className="absolute left-12 right-12 h-1 bg-emerald-100 rounded-full overflow-hidden">
-                    <motion.div 
-                      className="h-full bg-emerald-500 w-1/3 rounded-full"
-                      animate={{ x: ["-100%", "300%"] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                    />
-                 </div>
-                 
-                 {/* Node 1 */}
-                 <div className="relative z-10 flex flex-col items-center gap-3">
-                   <div className="w-20 h-20 rounded-2xl bg-white shadow-md border-2 border-emerald-100 flex items-center justify-center relative">
-                     <Globe className="text-teal-700 w-10 h-10" />
-                     <span className="absolute -top-2 -right-2 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
-                   </div>
-                   <div className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">Cairo Hub</div>
-                 </div>
-
-                 {/* Node 2 */}
-                 <div className="relative z-10 flex flex-col items-center gap-3">
-                   <div className="w-20 h-20 rounded-2xl bg-white shadow-md border-2 border-emerald-100 flex items-center justify-center relative">
-                     <Building2 className="text-teal-700 w-10 h-10" />
-                     <span className="absolute -top-2 -right-2 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
-                   </div>
-                   <div className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">Riyadh Hub</div>
-                 </div>
-               </div>
-               <div className="absolute bottom-6 left-0 w-full text-center text-sm font-semibold text-emerald-600">
-                 Encrypted Health Information Exchange
-               </div>
             </div>
-          </motion.div>
+            
+            <h1 className="text-5xl lg:text-7xl font-extrabold text-teal-950 leading-[1.1] mb-6 tracking-tight">
+              Instant Specialist <br/>
+              <span className="text-emerald-600">Infrastructure.</span>
+            </h1>
+            
+            <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl">
+              The Saudi health sector faces a projected 15,000+ specialist deficit. Integrate board-certified Egyptian specialists into your hospital's EHR within 48 hours.
+            </p>
+            
+            <div className="flex flex-wrap gap-4">
+              <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-[0_8px_30px_rgb(5,150,105,0.3)] transition-all hover:-translate-y-1">
+                Integrate Today
+              </button>
+              <button className="bg-white border-2 border-teal-800 text-teal-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-teal-50 transition-colors flex items-center gap-2">
+                <PlayCircle className="w-5 h-5" /> View Demo
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 w-full relative h-[450px] hidden lg:block">
+            {/* Animated Data Bridge */}
+            <div className="absolute inset-0 flex items-center justify-center p-8 bg-white/50 backdrop-blur-md rounded-3xl border border-teal-100 shadow-xl">
+              <div className="w-full max-w-md relative">
+                
+                {/* Node: Riyadh */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
+                  <div className="bg-white w-20 h-20 rounded-2xl shadow-lg border-2 border-slate-100 flex items-center justify-center mb-3 relative">
+                    <Building className="text-teal-700 w-10 h-10" />
+                    <div className="absolute -top-2 -right-2 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
+                  </div>
+                  <div className="bg-teal-900 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">Riyadh Hub</div>
+                </div>
+
+                {/* Node: Cairo */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
+                  <div className="bg-white w-20 h-20 rounded-2xl shadow-lg border-2 border-slate-100 flex items-center justify-center mb-3 relative">
+                    <GraduationCap className="text-emerald-600 w-10 h-10" />
+                    <div className="absolute -top-2 -right-2 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
+                  </div>
+                  <div className="bg-teal-900 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">Cairo Hub</div>
+                </div>
+
+                {/* The Bridge & Packets */}
+                <div className="absolute top-1/2 left-20 right-20 h-[2px] bg-emerald-100 -translate-y-1/2">
+                   <motion.div 
+                     initial={{ left: "0%", opacity: 0 }}
+                     animate={{ left: "100%", opacity: [0, 1, 1, 0] }}
+                     transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                     className="absolute top-1/2 -translate-y-1/2 w-16 h-1 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"
+                   />
+                </div>
+                
+              </div>
+            </div>
+          </div>
+          
         </div>
       </section>
 
-      {/* Unfair Advantage Grid */}
-      <section className="py-24 px-6 bg-white border-y border-slate-100">
-        <div className="max-w-7xl mx-auto">
+      {/* VALIDATION GRID */}
+      <section className="py-24 bg-white border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold text-teal-950 mb-4">The Clinical Advantage</h2>
-            <p className="text-slate-500 max-w-2xl mx-auto">Engineered specifically for the demands of the Gulf healthcare market, ensuring zero compromise on quality, legality, or security.</p>
+            <h2 className="text-3xl font-extrabold text-teal-950 mb-4">Primary Research Validation</h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">Backed by extensive dual-market surveys and validated hypotheses.</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <GraduationCap className="w-8 h-8 text-emerald-600" />,
-                title: "Elite Talent Pipeline",
-                desc: "Exclusive institutional networks with Ain Shams & Demerdash University Hospitals. Pre-credentialed, elite medical minds ready to deploy."
-              },
-              {
-                icon: <ShieldCheck className="w-8 h-8 text-emerald-600" />,
-                title: "The Malpractice Shield",
-                desc: "100% Legal Safety. Cross-border consults are structured strictly as 'Advisory Opinions'. Primary clinical liability remains fully with your on-site attending physician."
-              },
-              {
-                icon: <Lock className="w-8 h-8 text-emerald-600" />,
-                title: "Military-Grade Privacy",
-                desc: "Programmatic PII-Stripping ensures zero Patient Identifiable Information crosses borders. End-to-End Encrypted and strictly aligned with HIPAA and GCC healthcare data compliance."
-              }
-            ].map((feature, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.5, delay: i * 0.15 }}
-                whileHover={{ y: -8, boxShadow: "0px 20px 40px rgba(4, 110, 100, 0.12)" }}
-                className="bg-slate-50 border border-slate-100 p-8 rounded-3xl transition-all duration-300 flex flex-col items-start"
-              >
-                <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 mb-6">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold text-teal-900 mb-3">{feature.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{feature.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+            <motion.div whileHover={{ y: -5, scale: 1.02 }} className="bg-emerald-50/50 border border-emerald-100 p-8 rounded-3xl text-center">
+              <div className="text-5xl font-black text-emerald-600 mb-4">85.1%</div>
+              <h3 className="text-xl font-bold text-teal-900 mb-2">Retention Guarantee</h3>
+              <p className="text-slate-600 text-sm">Of surveyed Egyptian physicians would stay in the country, actively curbing severe brain drain metrics.</p>
+            </motion.div>
 
-      {/* Financial Engine */}
-      <section className="py-24 px-6 relative bg-teal-950 text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-extrabold mb-4 text-white">The Wealth Transformation</h2>
-            <p className="text-teal-200 max-w-2xl mx-auto">Compare the devastating overhead of traditional CapEx models against our agile operational efficiency.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-0 rounded-3xl overflow-hidden shadow-2xl border border-teal-800">
-            {/* Left Col */}
-            <div className="bg-slate-900 p-12 relative flex flex-col justify-center border-r border-slate-800">
-              <h3 className="text-2xl font-bold text-slate-300 mb-8 border-b border-slate-700 pb-4">The Old CapEx Burden</h3>
-              <ul className="space-y-6">
-                {['High Agency Recruitment Fees', 'Housing & Relocation Stipends', 'Iqama & Visa Processing Delays', '3-6 Months Vacancy Wait Time', 'Idle Time Costs (Low Volume Days)'].map((t, i) => (
-                  <li key={i} className="flex items-center gap-4 text-slate-400">
-                    <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
-                    </div>
-                    <span className="font-medium">{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {/* Right Col */}
-            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-12 relative flex flex-col justify-center shadow-inner">
-              <div className="absolute top-0 right-0 p-8 opacity-20"><Activity className="w-32 h-32" /></div>
-              <h3 className="text-2xl font-bold text-white mb-8 border-b border-emerald-400 pb-4 relative z-10">CareOnCall Variable Efficiency</h3>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 mb-8 relative z-10">
-                <div className="text-5xl font-black text-white mb-2">$1,500<span className="text-xl font-normal text-teal-100">/mo</span></div>
-                <div className="text-teal-100 font-medium">SaaS Integration Retainer</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 relative z-10">
-                <div className="text-5xl font-black text-white mb-2">+$30</div>
-                <div className="text-teal-100 font-medium">Per Asynchronous Diagnostic Read</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-12 text-center bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 relative">
-             <p className="text-xl font-medium text-emerald-300">Shift from fixed capital expenditure to lean, Pay-Per-Read operational efficiency today.</p>
+            <motion.div whileHover={{ y: -5, scale: 1.02 }} className="bg-teal-50/50 border border-teal-100 p-8 rounded-3xl text-center">
+              <div className="text-5xl font-black text-teal-700 mb-4">56%</div>
+              <h3 className="text-xl font-bold text-teal-900 mb-2">Brain Drain Addressed</h3>
+              <p className="text-slate-600 text-sm">Direct mitigation of the specialized workforce flight out of Egypt's crucial public healthcare sector.</p>
+            </motion.div>
+            
+            <motion.div whileHover={{ y: -5, scale: 1.02 }} className="bg-slate-50 border border-slate-200 p-8 rounded-3xl text-center">
+              <div className="text-5xl font-black text-slate-700 mb-4">57.1%</div>
+              <h3 className="text-xl font-bold text-teal-900 mb-2">Asynchronous Preference</h3>
+              <p className="text-slate-600 text-sm">Target segment preference for flexible, asynchronous reads rather than live, disruptive on-call hours.</p>
+            </motion.div>
           </div>
         </div>
       </section>
     </motion.div>
   );
-};
+}
 
-// --- VIEW 2: PROVIDER LOGIN ---
-const ProviderLoginView = ({ onEnter }: { onEnter: () => void }) => {
+// --- TAB 2: HOW WE CHOOSE DOCTORS ---
+function VettingTab() {
+  const steps = [
+    {
+      title: "1. Institutional Partnerships",
+      desc: "Exclusive recruitment from Ain Shams & Demerdash University Hospitals. We do not accept open market applications.",
+      icon: <Building className="w-8 h-8 text-emerald-600" />
+    },
+    {
+      title: "2. Board Certification Validation",
+      desc: "Multi-step background checks and syndicate license verification ensuring premier clinical competence.",
+      icon: <CheckCircle2 className="w-8 h-8 text-teal-600" />
+    },
+    {
+      title: "3. The Malpractice Shield",
+      desc: "Strict legal onboarding ensuring doctors provide 'Advisory Opinions' only, keeping primary liability with the GCC attending physician.",
+      icon: <ShieldCheck className="w-8 h-8 text-emerald-600" />
+    },
+    {
+      title: "4. Zero-Trust Security Training",
+      desc: "Mandatory training on PII-Stripping and HIPAA compliance protocols before accessing the DaaS terminal.",
+      icon: <Lock className="w-8 h-8 text-teal-600" />
+    }
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="py-24 px-6 max-w-5xl mx-auto">
+      <div className="text-center mb-20">
+        <h2 className="text-4xl font-extrabold text-teal-950 mb-4">The Talent Pipeline & Credentialing Engine</h2>
+        <p className="text-lg text-slate-600">Our four-stage filter ensuring absolute clinical excellence and legal compliance.</p>
+      </div>
+
+      <div className="relative border-l-4 border-emerald-100 ml-6 md:ml-12 space-y-16">
+        {steps.map((step, idx) => (
+          <motion.div 
+            key={idx} 
+            initial={{ opacity: 0, x: -30 }} 
+            whileInView={{ opacity: 1, x: 0 }} 
+            viewport={{ once: true }}
+            whileHover={{ y: -5, scale: 1.02 }}
+            className="relative pl-12"
+          >
+            {/* Timeline Circle */}
+            <div className="absolute -left-[34px] top-4 bg-white border-4 border-emerald-500 w-16 h-16 rounded-full flex items-center justify-center shadow-md">
+              {step.icon}
+            </div>
+            
+            <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
+              <h3 className="text-2xl font-bold text-teal-900 mb-3">{step.title}</h3>
+              <p className="text-slate-600 text-lg leading-relaxed">{step.desc}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// --- TAB 3: ENTERPRISE PRICING ---
+function PricingTab() {
+  const [scans, setScans] = useState<number>(300);
+  const baseSaaS = 1500;
+  const variableCost = scans * 30;
+  const totalCost = baseSaaS + variableCost;
+  const oldCapex = 25000;
+  const savings = oldCapex - totalCost;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="py-24 px-6 max-w-6xl mx-auto">
+      <div className="text-center mb-16">
+        <h2 className="text-4xl font-extrabold text-teal-950 mb-4">The Wealth Transfer Economics</h2>
+        <p className="text-lg text-slate-600">Dial in your monthly volume and visualize your immediate capital savings.</p>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-12">
+        {/* Interactive Calculator */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-10 shadow-lg">
+          <h3 className="text-xl font-bold text-teal-900 mb-8 border-b border-slate-100 pb-4">Interactive ROI Calculator</h3>
+          
+          <div className="mb-10">
+            <label className="flex justify-between items-center mb-4">
+              <span className="font-bold text-slate-700">Monthly Diagnostic Scans</span>
+              <span className="bg-emerald-100 text-emerald-800 px-4 py-1 rounded-full font-bold text-lg">{scans} Scans</span>
+            </label>
+            <input 
+              type="range" 
+              min="100" max="1000" step="10"
+              value={scans}
+              onChange={(e) => setScans(Number(e.target.value))}
+              className="w-full appearance-none h-3 bg-slate-100 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+            />
+            <div className="flex justify-between text-xs text-slate-400 font-bold mt-3">
+              <span>100</span>
+              <span>1000+</span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
+              <span className="text-slate-600 font-medium">Base SaaS Retainer</span>
+              <span className="font-mono font-bold text-teal-900">${baseSaaS.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
+              <span className="text-slate-600 font-medium">Variable Costs ({scans} × $30)</span>
+              <span className="font-mono font-bold text-teal-900">${variableCost.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center p-6 bg-teal-900 rounded-xl text-white shadow-inner">
+              <span className="text-lg font-bold text-teal-100">CareOnCall Total Invoice</span>
+              <span className="text-3xl font-black">${totalCost.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Comparison Result */}
+        <div className="flex flex-col gap-6">
+          <motion.div whileHover={{ y: -5, scale: 1.02 }} className="bg-red-50/50 border border-red-100 rounded-3xl p-10">
+            <h4 className="text-slate-500 font-bold mb-2 uppercase tracking-wide">Estimated Traditional CapEx</h4>
+            <div className="text-5xl font-black text-slate-800">${oldCapex.toLocaleString()}+</div>
+            <p className="text-slate-500 mt-4 text-sm font-medium">Includes agency fees, housing, idle time, and fixed salaries.</p>
+          </motion.div>
+          
+          <motion.div whileHover={{ y: -5, scale: 1.02 }} className="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-3xl p-10 shadow-xl text-white flex-1 flex flex-col justify-center">
+            <h4 className="text-emerald-100 font-bold mb-2 uppercase tracking-wide">Monthly Hospital Savings</h4>
+            <div className="text-6xl font-black">${savings.toLocaleString()}</div>
+            <p className="text-teal-100 mt-4 text-lg font-medium border-t border-teal-600/50 pt-4">Zero recruitment fees. Immediate positive cash flow.</p>
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// --- TAB 4: OUR TEAM ---
+function TeamTab() {
+  const team = [
+    { name: "Kareem Amr", role: "Strategy & Operations" },
+    { name: "Abdelrahman Hani", role: "Clinical Research" },
+    { name: "Mohammed Hatem", role: "Provider Relations" },
+    { name: "Mohab Adel", role: "Technical Infrastructure" },
+    { name: "Mohammed Emad", role: "Enterprise Partnerships" }
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="py-24 px-6 max-w-7xl mx-auto">
+      <div className="text-center mb-20">
+        <h2 className="text-4xl font-extrabold text-teal-950 mb-4">The Founders Behind the Bridge</h2>
+        <p className="text-lg text-slate-600">Combining clinical insight with scalable technology infrastructure.</p>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-12">
+        {team.map((member, idx) => (
+          <motion.div 
+            key={idx} 
+            whileHover={{ y: -10, scale: 1.05 }}
+            className="flex flex-col items-center group w-48"
+          >
+            <div className="w-48 h-48 bg-slate-200 rounded-full border-4 border-emerald-500 mb-6 flex items-center justify-center shadow-lg overflow-hidden relative">
+              {/* Image placeholder slot for user to plug their actual images later */}
+              <User className="w-20 h-20 text-slate-400 group-hover:scale-110 transition-transform duration-500" />
+              <div className="absolute inset-0 bg-emerald-600/0 group-hover:bg-emerald-600/10 transition-colors"></div>
+            </div>
+            <h3 className="text-xl font-bold text-teal-950 text-center">{member.name}</h3>
+            <p className="text-emerald-700 font-semibold text-center text-sm mt-1">{member.role}</p>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// --- TAB 5: CONTACT US ---
+function ContactTab() {
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="py-24 px-6 max-w-6xl mx-auto">
+      <div className="text-center mb-16">
+        <h2 className="text-4xl font-extrabold text-teal-950 mb-4">Initiate Enterprise Integration</h2>
+        <p className="text-lg text-slate-600">Connect with our deployment team to outline your hospital's specialist requirements.</p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-12">
+        {/* Left Col: Info */}
+        <div className="bg-teal-900 border border-teal-800 rounded-3xl p-10 text-white shadow-xl">
+          <h3 className="text-2xl font-bold mb-8">Corporate Directory</h3>
+          
+          <div className="space-y-8">
+            <div className="flex items-start gap-4">
+              <MapPin className="w-6 h-6 text-emerald-400 shrink-0" />
+              <div>
+                <h4 className="font-bold text-lg">HQ (Demand Hub)</h4>
+                <p className="text-teal-200 mt-1">King Fahd Road, Olaya District<br/>Riyadh, KSA</p>
+                <p className="text-teal-200 mt-1 font-mono text-sm">+966 50 555 0192</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <Building className="w-6 h-6 text-emerald-400 shrink-0" />
+              <div>
+                <h4 className="font-bold text-lg">Operations (Supply Hub)</h4>
+                <p className="text-teal-200 mt-1">The Greek Campus, Downtown<br/>Cairo, Egypt</p>
+                <p className="text-teal-200 mt-1 font-mono text-sm">+20 10 222 54321</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <Mail className="w-6 h-6 text-emerald-400 shrink-0" />
+              <div>
+                <h4 className="font-bold text-lg">Electronic Communications</h4>
+                <p className="text-teal-200 mt-1">enterprise@careoncall.io</p>
+                <p className="text-teal-200 mt-1">partnerships@careoncall.io</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Col: Form */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-10 shadow-lg">
+          <form className="space-y-6" onSubmit={e => e.preventDefault()}>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Full Name</label>
+              <input type="text" className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-slate-50" placeholder="Dr. Abdullah Al-Faisal" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Hospital / Healthcare Facility</label>
+              <input type="text" className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-slate-50" placeholder="e.g. Riyadh Central Hospital" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Corporate Email</label>
+              <input type="email" className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-slate-50" placeholder="admin@domain.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Inquiry / Requirements</label>
+              <textarea rows={4} className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none bg-slate-50" placeholder="Please specify specialties needed (e.g., Radiology, Pathology)..."></textarea>
+            </div>
+            <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-md mt-4">
+              Submit Integration Request
+            </button>
+          </form>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ==========================================
+// VIEW 2: PROVIDER SECURE LOGIN (Presentation Transition)
+// ==========================================
+function LoginView({ setView }: { setView: (v: ViewState) => void }) {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  const handleAuth = () => {
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
     setIsAuthenticating(true);
+    // Fake latency for live presentation
     setTimeout(() => {
-      onEnter();
+      setView('provider-dashboard');
     }, 1500);
   };
 
   return (
     <motion.div 
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="w-full min-h-screen bg-gradient-to-br from-teal-900 to-slate-900 flex items-center justify-center p-6 relative"
+      className="min-h-screen flex items-center justify-center bg-teal-950 p-6 relative overflow-hidden"
     >
-      {/* Abstract Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[800px] h-[800px] bg-emerald-500/10 blur-[120px] rounded-full top-[-20%] left-[-10%]" />
-        <div className="absolute w-[600px] h-[600px] bg-cyan-500/10 blur-[100px] rounded-full bottom-[-10%] right-[-10%]" />
-      </div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-900 to-slate-900"></div>
 
       <motion.div 
-        initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] rounded-3xl p-8 relative z-10"
+        initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }}
+        className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative z-10"
       >
         <div className="flex flex-col items-center mb-10">
-          <div className="bg-emerald-500/20 p-4 rounded-full border border-emerald-300/30 mb-4 shadow-lg">
-            <Lock className="w-8 h-8 text-emerald-400" />
+          <div className="bg-emerald-500 p-4 rounded-2xl mb-6 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+            <Lock className="text-white w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-extrabold text-white text-center">Egyptian Specialist Secure Access Terminal</h2>
-          <p className="text-teal-200/70 text-sm mt-3 text-center">Authorized personnel only. End-to-End Encrypted.</p>
+          <h2 className="text-2xl font-bold text-white text-center tracking-wide">Egyptian Specialist <br/> Secure Access Terminal</h2>
         </div>
 
-        <div className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-xs font-semibold text-teal-100 uppercase tracking-wider mb-2">Institutional Email</label>
+            <label className="block text-teal-100 text-xs uppercase tracking-wider font-bold mb-2">Institutional Email</label>
             <input 
               readOnly 
               value="dr.ahmed@demerdash.edu.eg" 
-              className="w-full bg-black/20 border border-white/10 text-white placeholder-slate-400 rounded-xl px-4 py-3.5 focus:outline-none focus:border-emerald-500 transition-colors font-mono text-sm shadow-inner"
+              className="w-full bg-slate-900/50 border border-teal-800 text-slate-300 rounded-xl px-4 py-4 focus:outline-none font-mono text-sm cursor-not-allowed"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-teal-100 uppercase tracking-wider mb-2">Secure Password</label>
+            <label className="block text-teal-100 text-xs uppercase tracking-wider font-bold mb-2">Secure Password</label>
             <input 
+              type="password" 
               readOnly 
-              type="password"
               value="••••••••••••••••" 
-              className="w-full bg-black/20 border border-white/10 text-white placeholder-slate-400 rounded-xl px-4 py-3.5 focus:outline-none focus:border-emerald-500 transition-colors tracking-[0.2em] shadow-inner"
+              className="w-full bg-slate-900/50 border border-teal-800 text-slate-300 rounded-xl px-4 py-4 focus:outline-none tracking-[0.3em] cursor-not-allowed"
             />
           </div>
-
           <button 
-            onClick={handleAuth}
+            type="submit" 
             disabled={isAuthenticating}
-            className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl px-4 py-4 transition-all shadow-[0_0_20px_rgba(5,150,105,0.4)] disabled:opacity-80 disabled:cursor-wait flex justify-center items-center gap-3 relative overflow-hidden"
+            className="w-full bg-emerald-500 hover:bg-emerald-400 text-teal-950 font-black py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] flex justify-center items-center gap-3 mt-4 text-sm uppercase tracking-wide disabled:opacity-80 disabled:cursor-wait"
           >
             {isAuthenticating ? (
-              <>
-                <motion.div 
-                  animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                />
-                Authenticating via Zero-Trust...
-              </>
+              <><Loader className="animate-spin w-5 h-5" /> Authenticating...</>
             ) : (
-              "Authenticate & Enter Workspace"
+              <><ShieldCheck className="w-5 h-5" /> Authenticate Workspace</>
             )}
           </button>
-        </div>
+        </form>
+        
+        <button onClick={() => setView('landing')} className="mt-8 text-teal-400/60 text-xs font-bold uppercase tracking-widest w-full text-center hover:text-white transition-colors">
+          Return to Corporate Site
+        </button>
       </motion.div>
     </motion.div>
   );
-};
+}
 
-// --- VIEW 3: PROVIDER DASHBOARD ---
-const ProviderDashboardView = ({ balance, onOpenScan, onLogout }: { balance: number, onOpenScan: () => void, onLogout: () => void }) => {
+// Custom Loader
+const Loader = ({ className }: { className?: string }) => (
+  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+);
+
+// ==========================================
+// VIEW 3: PROVIDER DASHBOARD 
+// ==========================================
+function DashboardView({ setView, walletBalance }: { setView: (v: ViewState) => void, walletBalance: number }) {
   return (
     <motion.div 
-      initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-      className="w-full min-h-screen bg-slate-50 flex"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="min-h-screen bg-slate-50 flex"
     >
-      {/* Sidebar */}
-      <div className="w-24 bg-white border-r border-teal-100 flex flex-col items-center py-8 shadow-sm z-20">
-        <div className="bg-emerald-100 p-3 rounded-2xl mb-12 shadow-sm">
-          <Stethoscope className="w-8 h-8 text-emerald-600" />
-        </div>
-        
-        <div className="flex flex-col gap-8 w-full items-center flex-1">
-          <button className="p-3 text-emerald-600 bg-emerald-50 rounded-xl relative group">
-            <List className="w-6 h-6" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
-          </button>
-          <button className="p-3 text-slate-400 hover:text-teal-600 hover:bg-slate-50 rounded-xl transition-all"><CheckCircle className="w-6 h-6" /></button>
-          <button className="p-3 text-slate-400 hover:text-teal-600 hover:bg-slate-50 rounded-xl transition-all"><Wallet className="w-6 h-6" /></button>
-          <button className="p-3 text-slate-400 hover:text-teal-600 hover:bg-slate-50 rounded-xl transition-all"><Settings className="w-6 h-6" /></button>
-        </div>
-
-        <button onClick={onLogout} className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all mt-auto">
-          <LogOut className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header */}
-        <header className="h-20 bg-white border-b border-teal-100 flex items-center justify-between px-10 shrink-0">
-          <div>
-            <h1 className="text-2xl font-bold text-teal-950">Welcome back, Dr. Ahmed</h1>
-            <p className="text-slate-500 text-sm font-medium mt-0.5">Specialty: Complex Radiology | Demerdash Hospital</p>
+      {/* SIDEBAR */}
+      <aside className="w-72 bg-teal-950 text-teal-100 flex flex-col p-6 border-r border-teal-900 shrink-0">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="bg-emerald-600 p-2 rounded-lg">
+            <Activity className="text-white w-6 h-6" />
           </div>
-          <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-full shadow-sm">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse border border-white" />
-            <span className="text-emerald-800 text-xs font-bold tracking-wide">Secure EHR Connection: Active & Encrypted</span>
+          <span className="text-2xl font-extrabold text-white tracking-tight">CareOnCall</span>
+        </div>
+
+        <nav className="space-y-2 flex-1">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-default bg-teal-800 text-white font-bold shadow-inner">
+            <FileText className="w-5 h-5"/> Asynchronous Queue
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer text-teal-400 hover:bg-teal-900 transition-colors">
+            <CheckCircle className="w-5 h-5"/> Case History
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer text-teal-400 hover:bg-teal-900 transition-colors">
+            <Wallet className="w-5 h-5"/> FinTech Wallet
+          </div>
+        </nav>
+
+        <div className="border-t border-teal-800 pt-6 mt-auto">
+          <button onClick={() => setView('landing')} className="flex items-center gap-2 text-teal-400 hover:text-white text-sm font-bold transition-colors w-full p-3 rounded-xl hover:bg-teal-900">
+            <LogOut className="w-4 h-4" /> Terminate Session
+          </button>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* HEADER */}
+        <header className="bg-white h-24 border-b border-slate-200 px-10 flex items-center justify-between shrink-0 shadow-sm">
+          <div>
+            <h1 className="text-2xl font-extrabold text-teal-950">Welcome, Dr. Ahmed M.</h1>
+            <p className="text-slate-500 font-medium mt-1 uppercase tracking-wider text-xs">Demerdash Radiology Dept. | Board Certified ID: #EG-4412</p>
+          </div>
+          <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-full">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-emerald-800 font-bold text-xs uppercase tracking-wider">EHR Link Active</span>
           </div>
         </header>
 
-        {/* Scrollable Area */}
-        <main className="flex-1 overflow-auto p-10">
+        <div className="flex-1 overflow-y-auto p-10 bg-slate-50/50">
           
-          {/* FinTech Metrics Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            
-            <motion.div whileHover={{ y: -4 }} className="bg-white p-6 rounded-3xl border border-teal-100 shadow-sm flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-slate-500 font-semibold text-sm">Pending Queue</h3>
-                <div className="p-2 bg-slate-50 text-slate-600 rounded-lg"><Clock className="w-5 h-5"/></div>
-              </div>
-              <div className="text-4xl font-extrabold text-teal-950">3 Scans</div>
-              <div className="text-sm font-medium text-emerald-600 mt-2 bg-emerald-50 self-start px-2 py-1 rounded-md">Estimated value: $90 USD</div>
+          {/* FINANCIAL STATS */}
+          <div className="grid grid-cols-3 gap-6 mb-10">
+            <motion.div whileHover={{ y: -5, scale: 1.02 }} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+              <div className="text-slate-400 font-bold text-sm uppercase tracking-wider mb-2 flex items-center gap-2"><Clock className="w-4 h-4"/> Pending Queue</div>
+              <div className="text-4xl font-black text-teal-950 mb-2">3 Scans</div>
+              <div className="text-emerald-600 font-bold text-sm">Value: $90 USD</div>
             </motion.div>
 
-            <motion.div whileHover={{ y: -4 }} className="bg-white p-6 rounded-3xl border border-teal-100 shadow-sm flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-slate-500 font-semibold text-sm">Monthly Volume</h3>
-                <div className="p-2 bg-slate-50 text-slate-600 rounded-lg"><Activity className="w-5 h-5"/></div>
-              </div>
-              <div className="text-4xl font-extrabold text-teal-950">40 Scans</div>
-              <div className="text-sm font-medium text-teal-600 mt-2">Processed Successfully</div>
+            <motion.div whileHover={{ y: -5, scale: 1.02 }} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+              <div className="text-slate-400 font-bold text-sm uppercase tracking-wider mb-2 flex items-center gap-2"><Activity className="w-4 h-4"/> Monthly Volume</div>
+              <div className="text-4xl font-black text-teal-950 mb-2">40 Scans</div>
+              <div className="text-teal-600 font-bold text-sm">Processed Successfully</div>
             </motion.div>
 
-            <motion.div whileHover={{ y: -4 }} className="bg-gradient-to-br from-teal-900 to-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><Wallet className="w-32 h-32 text-white" /></div>
-              <div>
-                <h3 className="text-teal-100 font-semibold text-sm mb-2">Total offshore Earnings</h3>
-                <div className="text-4xl font-black text-white flex items-center">
-                  <span className="text-2xl text-emerald-400 mr-1">$</span>
-                  {balance.toLocaleString()}.00 <span className="text-lg text-slate-400 ml-2 font-medium">USD</span>
-                </div>
+            <motion.div whileHover={{ y: -5, scale: 1.02 }} className="bg-gradient-to-br from-teal-900 to-slate-900 p-6 rounded-3xl border border-teal-800 shadow-xl relative overflow-hidden text-white flex flex-col justify-center">
+              <div className="absolute -right-4 top-4 opacity-10"><Wallet className="w-24 h-24"/></div>
+              <div className="relative z-10">
+                <div className="text-teal-300 font-bold text-sm uppercase tracking-wider mb-2">Total Earnings</div>
+                <div className="text-4xl font-black text-white mb-1">${walletBalance}.00 <span className="text-xl text-teal-200 font-bold">USD</span></div>
               </div>
-              <button className="mt-6 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-teal-950 font-bold rounded-xl transition-colors shadow-inner flex items-center justify-center gap-2 text-sm z-10">
-                <CreditCard className="w-4 h-4" /> Withdraw to Payoneer Account
-              </button>
             </motion.div>
-
           </div>
 
-          {/* Patient Queue Table */}
-          <div className="bg-white rounded-3xl border border-teal-100 shadow-sm overflow-hidden">
-            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h2 className="text-lg font-bold text-teal-950 flex items-center gap-3">
-                <List className="w-5 h-5 text-emerald-600"/> The Asynchronous Patient Queue
+          {/* TABLE */}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+              <h2 className="text-lg font-extrabold text-teal-950 flex items-center gap-2">
+                <FileText className="text-teal-600 w-5 h-5" /> Incoming Remote Cases
               </h2>
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-white border-b border-slate-100 text-xs uppercase tracking-wider font-bold text-slate-400">
-                    <th className="p-6">Case ID</th>
-                    <th className="p-6">Pathology / Scan Type</th>
-                    <th className="p-6">Compliance Status</th>
-                    <th className="p-6">SLA Countdown</th>
-                    <th className="p-6">Advisory Fee</th>
-                    <th className="p-6 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {/* Demo Row */}
-                  <tr className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
-                    <td className="p-6 font-mono font-medium text-slate-600">KSA-Riyadh-MR-902</td>
-                    <td className="p-6 font-bold text-teal-900">Complex Fetal Ultrasound</td>
-                    <td className="p-6">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
-                        <Lock className="w-3 h-3" /> PII Redacted (Safe)
-                      </span>
-                    </td>
-                    <td className="p-6 font-mono font-bold text-orange-500">3h 45m remaining</td>
-                    <td className="p-6 font-black text-emerald-600">$30 USD</td>
-                    <td className="p-6 text-right">
-                      <button 
-                        onClick={onOpenScan}
-                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-transform transform group-hover:-translate-y-0.5 shadow-md flex items-center gap-2 ml-auto"
-                      >
-                        <Scan className="w-4 h-4" /> Open Diagnostic Viewer
-                      </button>
-                    </td>
-                  </tr>
-                  {/* Dummy Row 2 */}
-                  <tr className="border-b border-slate-50 hover:bg-slate-50 transition-colors opacity-60">
-                    <td className="p-6 font-mono font-medium text-slate-500">KSA-Jeddah-CT-881</td>
-                    <td className="p-6 font-bold text-slate-700">Thoracic CT Scan w/ Contrast</td>
-                    <td className="p-6">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
-                        <Lock className="w-3 h-3" /> PII Redacted (Safe)
-                      </span>
-                    </td>
-                    <td className="p-6 font-mono font-medium text-slate-500">12h 10m remaining</td>
-                    <td className="p-6 font-bold text-emerald-600/60">$30 USD</td>
-                    <td className="p-6 text-right">
-                      <button className="px-5 py-2.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed flex items-center gap-2 ml-auto">
-                        <Lock className="w-4 h-4" /> Locked
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <table className="w-full text-left">
+              <thead className="bg-white border-b border-slate-100">
+                <tr className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+                  <th className="p-5">Case ID</th>
+                  <th className="p-5">Pathology / Scan</th>
+                  <th className="p-5">Compliance</th>
+                  <th className="p-5">Fee</th>
+                  <th className="p-5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="p-5 font-mono font-bold text-teal-900 text-sm">KSA-Riy-MR-902</td>
+                  <td className="p-5 font-bold text-slate-800">Complex Fetal Ultrasound</td>
+                  <td className="p-5">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold shrink-0">
+                      <Lock className="w-3 h-3" /> PII Redacted
+                    </span>
+                  </td>
+                  <td className="p-5 font-black text-emerald-600">$30 USD</td>
+                  <td className="p-5 text-right">
+                    <button 
+                      onClick={() => setView('scan-simulation')}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition-all whitespace-nowrap"
+                    >
+                      Open Viewer
+                    </button>
+                  </td>
+                </tr>
+                {/* Dummy Row */}
+                <tr className="hover:bg-slate-50 transition-colors opacity-50">
+                  <td className="p-5 font-mono font-bold text-slate-500 text-sm">KSA-Jed-CT-104</td>
+                  <td className="p-5 font-bold text-slate-600">Thoracic CT Scan</td>
+                  <td className="p-5">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200 text-slate-600 text-xs font-bold">
+                      <Lock className="w-3 h-3" /> PII Redacted
+                    </span>
+                  </td>
+                  <td className="p-5 font-bold text-slate-400">$30 USD</td>
+                  <td className="p-5 text-right">
+                    <button className="bg-slate-200 text-slate-500 font-bold px-5 py-2.5 rounded-xl cursor-not-allowed whitespace-nowrap">Locked</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-
-        </main>
-      </div>
+        </div>
+      </main>
     </motion.div>
   );
-};
+}
 
-// --- VIEW 4: SIMULATION WORKSTATION ---
-const ScanSimulationView = ({ onComplete, onCancel }: { onComplete: () => void, onCancel: () => void }) => {
-  const [isTransmitting, setIsTransmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleTransmit = () => {
-    setIsTransmitting(true);
+// ==========================================
+// VIEW 4: LIVE CLINICAL SIMULATION (The Climax)
+// ==========================================
+function SimulationView({ 
+  setView, walletBalance, setWalletBalance 
+}: { 
+  setView: (v: ViewState) => void, walletBalance: number, setWalletBalance: (v: number) => void 
+}) {
+  const [report, setReport] = useState("Visual review of the provided fetal ultrasound series indicates normal second-trimester morphology. CRL and BPD measurements align with gestational age. No structural anomalies detected in the cardiac or neural tube. Recommend routine follow-up as per standard KSA protocol.");
+  const [status, setStatus] = useState<'idle' | 'transmitting' | 'success'>('idle');
+
+  const handleSubmit = () => {
+    setStatus('transmitting');
     setTimeout(() => {
-      setIsTransmitting(false);
-      setIsSuccess(true);
-      // Wait for success animations and toast to be viewed
-      setTimeout(() => {
-        // We do not auto-close here, we let the user click "Return to Provider Dashboard"
-      }, 500);
-    }, 1500);
+      setStatus('success');
+      setWalletBalance(walletBalance + 30);
+    }, 2000);
   };
 
   return (
     <motion.div 
-      initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
-      className="w-full h-screen bg-slate-950 flex flex-col overflow-hidden relative"
+      initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}
+      className="min-h-screen bg-slate-950 flex flex-col font-sans"
     >
-      {/* Top Bar */}
-      <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6 shrink-0 z-20">
+      {/* SIM HEADER */}
+      <header className="h-14 bg-black border-b border-slate-800 px-6 flex items-center justify-between text-slate-300 shrink-0">
         <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded bg-emerald-900 flex items-center justify-center border border-emerald-700">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+          <div className="text-emerald-400 font-mono text-xs uppercase font-bold tracking-widest border border-emerald-500/30 bg-emerald-900/30 px-3 py-1 rounded flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4"/> Secure Diagnostic Terminal
           </div>
-          <span className="text-slate-200 font-bold text-sm tracking-wide">
-            Secure Advisory Opinion Terminal &bull; <span className="text-slate-500 font-medium">Protected by International Malpractice Shield</span>
-          </span>
+          <span className="font-mono text-xs text-slate-500">SESSION_ID: x9f22-001</span>
         </div>
-        {!isSuccess && !isTransmitting && (
-          <button onClick={onCancel} className="text-sm font-semibold text-slate-400 hover:text-white px-4 py-1.5 rounded-md hover:bg-slate-800 transition-colors">
-            Cancel / Return
-          </button>
+        {status !== 'success' && status !== 'transmitting' && (
+          <button onClick={() => setView('provider-dashboard')} className="text-sm font-bold text-slate-500 hover:text-white transition-colors">Abort & Return</button>
         )}
       </header>
 
-      {/* Split Screen Layout */}
+      {/* SPLIT SCREEN */}
       <div className="flex-1 flex overflow-hidden">
         
-        {/* Left Panel: Fake PACS Viewer */}
-        <div className="w-[40%] bg-black border-r border-slate-800 p-6 flex flex-col relative">
-          <div className="absolute top-4 left-6 z-10 flex items-center gap-3">
-             <div className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs rounded shadow-lg flex items-center gap-2 backdrop-blur-sm">
-                <Lock className="w-3 h-3" /> VISUAL DATA ONLY. PII STRIPPED FOR HIPAA.
-             </div>
-          </div>
-
-          <div className="absolute top-4 right-6 z-10 flex gap-2">
-            <button className="w-10 h-10 bg-slate-900 border border-slate-700 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-800"><Maximize className="w-4 h-4"/></button>
-            <button className="w-10 h-10 bg-slate-900 border border-slate-700 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-800"><Sliders className="w-4 h-4"/></button>
-          </div>
-
-          {/* Mock Medical Scan Visual (Abstract CSS) */}
-          <div className="flex-1 rounded-xl border border-slate-800 overflow-hidden relative flex items-center justify-center bg-gradient-to-tr from-slate-900 via-blue-950 to-slate-900 mt-12 shadow-inner">
-             {/* Abstract grid to look like imaging software */}
-             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-             
-             {/* Mock Sonogram/MRI Bloom */}
-             <div className="w-64 h-64 rounded-full bg-emerald-900/30 blur-2xl absolute" />
-             <div className="w-40 h-80 bg-blue-500/10 blur-xl transform rotate-45" />
-
-             {/* UI Overlay artifacts */}
-             <div className="absolute bottom-4 left-4 text-xs font-mono font-bold text-emerald-500/70">
-                FOV: 320mm<br/>
-                THK: 5.0mm<br/>
-                WL: 40 WW: 350
-             </div>
-             <div className="absolute center flex flex-col items-center justify-center gap-4 text-slate-700">
-                <Scan className="w-24 h-24 opacity-20" />
-                <span className="font-bold tracking-widest uppercase opacity-20 text-sm">Fetal Morphology Series KSA-902</span>
-             </div>
-          </div>
-        </div>
-
-        {/* Right Panel: Reporting Engine */}
-        <div className="w-[60%] bg-white p-10 flex flex-col overflow-y-auto relative z-10">
+        {/* LEFT: PACS VIEWER MULTIMEDIA */}
+        <div className="w-1/2 bg-black border-r border-slate-800 flex flex-col relative">
+          <div className="absolute top-4 left-4 z-10 bg-amber-500 text-black text-[10px] font-black uppercase px-2 py-0.5 rounded flex items-center gap-1"><Lock className="w-3 h-3"/> VISUAL DATA ONLY. PII STRIPPED.</div>
           
-          <div className="mb-8">
-            <h1 className="text-3xl font-extrabold text-teal-950 mb-2">Submit Advisory Opinion</h1>
-            <p className="text-slate-500 font-medium">To: KSA Attending Physician (Riyadh Hub)</p>
+          <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-900 to-black">
+             {/* Fake Medical Imaging Aesthetic */}
+             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_white_1px,transparent_1px)]" style={{ backgroundSize: '20px 20px'}}></div>
+             <div className="w-80 h-80 rounded-full border border-slate-700/50 blur-[1px] flex items-center justify-center relative">
+                 <div className="absolute inset-0 bg-slate-500/20 rounded-full animate-pulse"></div>
+                 <Activity className="w-24 h-24 text-slate-400 opacity-30" />
+                 <div className="absolute bottom-4 right-4 text-emerald-500 font-mono text-[10px]">WL: 35<br/>WW: 250</div>
+             </div>
           </div>
+        </div>
 
-          <div className="bg-amber-50 border border-amber-200 p-5 rounded-xl mb-8 flex gap-4 items-start shadow-sm">
-            <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-amber-800 font-bold mb-1">Legal Reminder</h4>
-              <p className="text-amber-700/80 text-sm leading-relaxed font-medium">
-                You are providing an asynchronous advisory opinion. Final clinical liability, diagnosis, and intervention decisions remain 100% with the KSA attending physician based on local law.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col mb-8">
-            <label className="text-sm font-bold text-teal-900 mb-3 uppercase tracking-wider">Clinical Impressions & Findings</label>
-            <textarea 
-              disabled={isTransmitting || isSuccess}
-              className="flex-1 w-full border-2 border-slate-200 rounded-2xl p-6 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none text-slate-700 leading-relaxed font-medium shadow-inner"
-              placeholder="Start typing your advisory report here... (e.g., 'No abnormalities detected in second-trimester morphology...')"
-              defaultValue="Visual review of the provided fetal ultrasound series indicates normal second-trimester morphology. CRL and BPD measurements align with gestational age. No structural anomalies detected in the cardiac or neural tube structures. Recommend routine 20-week follow-up as per standard KSA protocol."
-            />
-          </div>
-
-          {/* Action Area */}
-          <div className="shrink-0">
-            {isSuccess ? (
-              <motion.button 
-                initial={{ scale: 0.95 }} animate={{ scale: 1 }}
-                onClick={onComplete}
-                className="w-full py-5 bg-teal-950 hover:bg-teal-900 text-white font-bold rounded-2xl shadow-xl transition-all flex justify-center items-center gap-3 text-lg"
-              >
-                <ChevronLeft className="w-6 h-6" /> Return to Provider Dashboard
-              </motion.button>
-            ) : (
-              <button 
-                onClick={handleTransmit}
-                disabled={isTransmitting}
-                className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-[0_10px_30px_rgb(5,150,105,0.4)] transition-all transform hover:-translate-y-1 disabled:translate-y-0 disabled:opacity-90 disabled:cursor-wait flex items-center justify-center gap-3 text-lg relative overflow-hidden group"
-              >
-                {isTransmitting ? (
-                  <>
-                    <motion.div 
-                      animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                      className="w-6 h-6 border-2 border-white/40 border-t-white rounded-full"
-                    />
-                    Encrypting & Transmitting to Riyadh EHR...
-                  </>
-                ) : (
-                  <>
-                    Transmit Report & Claim <span className="bg-white/20 px-2 py-0.5 rounded-md">$30 Fee</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
+        {/* RIGHT: REPORTING TERMINAL */}
+        <div className="w-1/2 bg-slate-50 p-10 flex flex-col relative overflow-y-auto">
+          
+          {/* SUCCESS OVERLAY */}
+          <AnimatePresence>
+            {status === 'success' && (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-x-10 top-10 z-50">
+                <div className="bg-white border-2 border-emerald-500 rounded-3xl p-8 shadow-2xl flex items-start gap-6">
+                  <div className="bg-emerald-100 p-3 rounded-full shrink-0">
+                    <CheckCircle className="w-10 h-10 text-emerald-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-black text-teal-950 mb-2">FinTech Bypass Successful</h3>
+                    <p className="text-slate-600 font-medium mb-6">Advisory report secured and integrated into Riyadh EHR. The Malpractice Shield is active.</p>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6">
+                       <span className="block text-emerald-800 text-xs font-bold uppercase tracking-wider mb-1">Direct Offshore Credit</span>
+                       <span className="text-3xl font-black text-emerald-600">+$30.00 USD</span>
+                    </div>
+                    <button 
+                      onClick={() => setView('provider-dashboard')}
+                      className="w-full bg-teal-900 hover:bg-teal-950 text-white font-bold py-4 rounded-xl shadow-lg transition-colors"
+                    >
+                      Return to Dashboard (Verify Wallet)
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             )}
+          </AnimatePresence>
+
+          <div className={`flex-1 flex flex-col transition-all duration-500 ${status === 'success' ? 'opacity-20 blur-sm pointer-events-none' : ''}`}>
+            <h2 className="text-3xl font-extrabold text-teal-950 mb-2">Advisory Report Editor</h2>
+            <p className="text-slate-500 font-medium mb-8">Target EHR: Riyadh Central Hospital (Dr. Khalid F.)</p>
+
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-8 flex gap-3 shadow-sm">
+              <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0" />
+              <div>
+                <h4 className="text-amber-900 font-bold mb-0.5">The Malpractice Shield</h4>
+                <p className="text-amber-800 text-sm font-medium">You are providing an asynchronous advisory opinion. Primary liability and final intervention decisions remain with the KSA attending physician.</p>
+              </div>
+            </div>
+
+            <label className="text-sm font-bold text-teal-900 mb-2 uppercase tracking-tight">Clinical Impressions</label>
+            <textarea 
+               value={report}
+               onChange={e => setReport(e.target.value)}
+               disabled={status !== 'idle'}
+               className="flex-1 w-full bg-white border border-slate-300 rounded-2xl p-6 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 resize-none text-slate-700 leading-relaxed font-medium shadow-inner"
+            ></textarea>
+
+            <button 
+              onClick={handleSubmit} 
+              disabled={status !== 'idle'}
+              className="mt-6 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-5 rounded-2xl shadow-[0_10px_20px_rgba(5,150,105,0.3)] transition-all flex justify-center items-center gap-3 text-lg disabled:bg-slate-300 disabled:shadow-none disabled:text-slate-500"
+            >
+               {status === 'idle' && <>Transmit Report & Claim $30 Fee <ArrowRight className="w-6 h-6"/></>}
+               {status === 'transmitting' && <><Loader className="animate-spin" /> Encrypting & Routing to Riyadh...</>}
+            </button>
           </div>
 
         </div>
-
       </div>
-
-      {/* CLIMAX ANIMATIONS: Success Overlay & FinTech Toast */}
-      <AnimatePresence>
-        {isSuccess && (
-          <>
-             {/* Massive Screen-Center Success Checkmark */}
-             <motion.div 
-               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               className="absolute inset-0 z-40 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center pointer-events-none"
-             >
-                <motion.div 
-                  initial={{ scale: 0, opacity: 0, rotate: -45 }} 
-                  animate={{ scale: 1, opacity: 1, rotate: 0 }} 
-                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                  className="bg-white p-10 rounded-[3rem] shadow-2xl border flex flex-col items-center"
-                >
-                   <div className="w-32 h-32 bg-emerald-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.5)] mb-6">
-                      <Check className="w-16 h-16 text-white stroke-[3]" />
-                   </div>
-                   <h2 className="text-3xl font-extrabold text-teal-900">Transmission Secured</h2>
-                   <p className="text-slate-500 font-medium mt-2 text-center max-w-xs">Report directly integrated into the KSA Electronic Health Record.</p>
-                </motion.div>
-             </motion.div>
-
-             {/* FinTech Toast Notification (Top Right) */}
-             <motion.div 
-               initial={{ x: 400, opacity: 0 }} 
-               animate={{ x: 0, opacity: 1 }} 
-               transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.5 }}
-               className="absolute top-10 right-10 z-50 bg-white shadow-[0_20px_50px_-10px_rgba(0,0,0,0.3)] rounded-2xl border-l-8 border-emerald-500 p-6 flex gap-5 items-start max-w-md pointer-events-auto cursor-default"
-             >
-                <div className="bg-emerald-100 p-3 rounded-xl shrink-0 mt-1">
-                  <Wallet className="w-8 h-8 text-emerald-600" />
-                </div>
-                <div>
-                   <h4 className="text-lg font-bold text-teal-950 mb-1">FinTech Bypass Successful</h4>
-                   <p className="text-slate-600 leading-relaxed font-medium">
-                     <strong className="text-emerald-700 text-lg">$30 USD</strong> has been programmatically credited to your offshore Payoneer Wallet, bypassing local devaluation restrictions.
-                   </p>
-                </div>
-             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
     </motion.div>
   );
-};
+}
