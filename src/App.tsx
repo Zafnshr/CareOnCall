@@ -4,7 +4,8 @@ import {
   Activity, ShieldCheck, Lock, CheckCircle, Wallet, FileText, 
   ArrowRight, Clock, Building, GraduationCap, ChevronRight, Calculator,
   Phone, Mail, MapPin, Camera, UserCircle2, Bell, LogOut, ZoomIn, 
-  Maximize, Contrast, Download, AlertTriangle, Users, FileDigit, Server
+  Maximize, Contrast, Download, AlertTriangle, Users, FileDigit, Server,
+  Menu, X
 } from 'lucide-react';
 
 type ViewState = 'landing' | 'provider-login' | 'provider-dashboard' | 'scan-simulation';
@@ -33,6 +34,7 @@ export default function App() {
 // --- LANDING CONTAINER ---
 function LandingView({ setView }: { setView: (v: ViewState) => void }) {
   const [activeTab, setActiveTab] = useState<TabState>('home');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const tabs = [
     { id: 'home', label: 'Overview' },
@@ -44,11 +46,11 @@ function LandingView({ setView }: { setView: (v: ViewState) => void }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col min-h-screen">
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-teal-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('home')}>
-            <div className="bg-emerald-600 p-2 rounded-lg shadow-md"><Activity className="text-white w-6 h-6" /></div>
-            <span className="text-2xl font-extrabold text-teal-950 tracking-tight">CareOnCall</span>
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-teal-100 shadow-sm transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setActiveTab('home'); setIsMobileMenuOpen(false); }}>
+            <div className="bg-emerald-600 p-1.5 md:p-2 rounded-lg shadow-md"><Activity className="text-white w-5 h-5 md:w-6 md:h-6" /></div>
+            <span className="text-xl md:text-2xl font-extrabold text-teal-950 tracking-tight">CareOnCall</span>
           </div>
           <div className="hidden lg:flex items-center gap-8 font-semibold text-slate-600">
             {tabs.map(t => (
@@ -58,10 +60,40 @@ function LandingView({ setView }: { setView: (v: ViewState) => void }) {
               </button>
             ))}
           </div>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setView('provider-login')} className="bg-teal-900 hover:bg-teal-950 text-white px-6 py-2.5 rounded-full font-bold shadow-md flex items-center gap-2">
-            Provider Portal <ArrowRight className="w-4 h-4" />
-          </motion.button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setView('provider-login')} className="bg-teal-900 hover:bg-teal-950 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-full font-bold shadow-md flex items-center gap-2 text-sm md:text-base">
+              <span className="hidden sm:inline">Provider Portal</span>
+              <span className="sm:hidden">Portal</span>
+              <ArrowRight className="w-4 h-4" />
+            </motion.button>
+            <button className="lg:hidden text-teal-950 p-1.5 hover:bg-teal-50 rounded-lg transition-colors" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
+
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="lg:hidden bg-white border-t border-teal-100 overflow-hidden"
+            >
+              <div className="flex flex-col px-4 py-4 space-y-1 bg-slate-50/50">
+                {tabs.map(t => (
+                  <button 
+                    key={t.id} 
+                    onClick={() => { setActiveTab(t.id); setIsMobileMenuOpen(false); }} 
+                    className={`block w-full text-left px-4 py-3 rounded-xl font-bold transition-all ${activeTab === t.id ? 'bg-emerald-100/80 text-emerald-800 shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       <main className="flex-1 flex flex-col">
@@ -92,19 +124,19 @@ function LandingView({ setView }: { setView: (v: ViewState) => void }) {
 function TabHome({ setActiveTab }: { setActiveTab: (t: TabState) => void }) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1">
-      <section className="relative pt-20 pb-32 overflow-hidden">
+      <section className="relative pt-12 md:pt-20 pb-20 md:pb-32 overflow-hidden">
         <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/40 via-slate-50 to-slate-50"></div>
-        <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col lg:flex-row items-center gap-16">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10 flex flex-col lg:flex-row items-center gap-10 md:gap-16">
           <div className="flex-1 text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/80 border border-emerald-200 text-emerald-800 font-bold text-xs uppercase tracking-wider mb-6">
               <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
               Solving the 15,000+ GCC Deficit
             </div>
-            <h1 className="text-5xl lg:text-7xl font-extrabold text-teal-950 leading-[1.1] mb-6 tracking-tight">Doctors as a Service. <br/><span className="text-emerald-600">Instant Infrastructure.</span></h1>
-            <p className="text-xl text-slate-600 mb-10 leading-relaxed font-medium">Stop bleeding capital on long recruitment cycles and visa delays. Seamlessly integrate board-certified Egyptian specialists directly into your hospital's EHR within 48 hours.</p>
-            <div className="flex items-center gap-4">
-              <motion.button onClick={() => setActiveTab('contact')} whileHover={{ y: -2 }} className="bg-emerald-600 text-white px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-2 shadow-lg">Integrate EHR Today <ChevronRight className="w-5 h-5"/></motion.button>
-              <motion.button onClick={() => setActiveTab('pricing')} whileHover={{ y: -2 }} className="bg-white border-2 border-teal-800 text-teal-900 px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-2">Calculate ROI</motion.button>
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold text-teal-950 leading-[1.1] mb-5 md:mb-6 tracking-tight">Doctors as a Service. <br/><span className="text-emerald-600">Instant Infrastructure.</span></h1>
+            <p className="text-lg md:text-xl text-slate-600 mb-8 md:mb-10 leading-relaxed font-medium">Stop bleeding capital on long recruitment cycles and visa delays. Seamlessly integrate board-certified Egyptian specialists directly into your hospital's EHR within 48 hours.</p>
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+              <motion.button onClick={() => setActiveTab('contact')} whileHover={{ y: -2 }} className="bg-emerald-600 text-white px-6 md:px-8 py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center w-full sm:w-auto gap-2 shadow-lg">Integrate EHR Today <ChevronRight className="w-5 h-5"/></motion.button>
+              <motion.button onClick={() => setActiveTab('pricing')} whileHover={{ y: -2 }} className="bg-white border-2 border-teal-800 text-teal-900 px-6 md:px-8 py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center w-full sm:w-auto gap-2">Calculate ROI</motion.button>
             </div>
           </div>
           <div className="flex-1 relative w-full h-[500px] perspective-1000 hidden lg:block">
@@ -140,39 +172,56 @@ function TabHome({ setActiveTab }: { setActiveTab: (t: TabState) => void }) {
 function DataCard({ number, title, desc, color }: { number: string, title: string, desc: string, color: 'emerald' | 'red' | 'teal' }) {
   const styles = { emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100', red: 'text-red-500 bg-red-50 border-red-100', teal: 'text-teal-700 bg-teal-50 border-teal-100' };
   return (
-    <div className={`p-8 rounded-3xl border ${styles[color].split(' ')[1]} ${styles[color].split(' ')[2]}`}>
-      <div className={`text-5xl lg:text-6xl font-black ${styles[color].split(' ')[0]} mb-4`}>{number}</div>
-      <h3 className="text-xl font-bold text-teal-900 mb-2">{title}</h3>
-      <p className="text-slate-600 font-medium">{desc}</p>
+    <div className={`p-6 md:p-8 rounded-3xl border ${styles[color].split(' ')[1]} ${styles[color].split(' ')[2]} relative overflow-hidden flex flex-col justify-between`}>
+      <div className={`text-4xl md:text-5xl lg:text-6xl font-black ${styles[color].split(' ')[0]} mb-4 md:mb-6`}>{number}</div>
+      <div className="pl-4 border-l-4 border-emerald-200 mt-2">
+        <p className="text-base md:text-lg text-slate-700 font-serif italic mb-3 leading-relaxed relative z-10">
+          "{desc}"
+        </p>
+        <h3 className="text-xs md:text-sm font-bold text-teal-900 uppercase tracking-widest">— {title}</h3>
+      </div>
     </div>
   );
 }
 
 function TabPipeline() {
   const steps = [
-    { icon: <Lock />, title: "1. Zero Trust Privacy Model", desc: "Military-grade data encryption, continuous authentication, and programmatic PII-stripping to ensure strict HIPAA/GCC compliance. Zero Patient Identifiable Information crosses borders." },
-    { icon: <ShieldCheck />, title: "2. The 'Advisory Opinion' Malpractice Shield", desc: "Cross-border liability neutralized. Egyptian specialists act as advisors; final clinical liability and patient intervention remain 100% with the on-site Gulf physician." },
-    { icon: <GraduationCap />, title: "3. Safety & Credentialing", desc: "Only board-certified physicians from elite institutions like Ain Shams and Demerdash are admitted, subjected to continuous peer-review auditing." },
-    { icon: <Wallet />, title: "4. The FinTech Bypass", desc: "Routing compensation directly in USD to offshore digital wallets, protecting physician wealth and ensuring retention in their home country." }
+    { icon: <Lock className="w-8 h-8"/>, title: "1. Zero Trust Privacy Model", desc: "Military-grade encryption, continuous authentication, and programmatic PII-stripping to ensure strict HIPAA compliance." },
+    { icon: <ShieldCheck className="w-8 h-8"/>, title: "2. Malpractice Shield", desc: "Cross-border liability neutralized. Egyptian specialists act entirely as advisors; final liability remains with the on-site Gulf physician." },
+    { icon: <GraduationCap className="w-8 h-8"/>, title: "3. Safety & Credentialing", desc: "Only board-certified physicians from elite institutions like Ain Shams are admitted, subjected to continuous peer-review." },
+    { icon: <Wallet className="w-8 h-8"/>, title: "4. The FinTech Bypass", desc: "Routing compensation directly in USD to offshore digital wallets, protecting physician wealth and ensuring retention." }
   ];
+
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 bg-slate-50 py-20">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-extrabold text-teal-950 mb-4">Infrastructure & Compliance Architecture</h2>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto font-medium">An ironclad legal and technical moat to protect Gulf hospitals and Egyptian specialists.</p>
-        </div>
-        <div className="space-y-12 relative before:absolute before:inset-0 before:ml-8 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-emerald-200">
-          {steps.map((s, i) => (
-            <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-              <div className="flex items-center justify-center w-16 h-16 rounded-full border-4 border-white bg-emerald-100 text-emerald-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">{s.icon}</div>
-              <div className="w-[calc(100%-5rem)] md:w-[calc(50%-3rem)] bg-white border border-slate-100 p-8 rounded-2xl shadow-sm hover:shadow-md transition">
-                <h3 className="text-xl font-bold text-teal-900 mb-2">{s.title}</h3>
-                <p className="text-slate-600 leading-relaxed font-medium">{s.desc}</p>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 bg-slate-50 py-20 overflow-hidden flex flex-col">
+      <div className="text-center mb-16 px-6 relative z-10">
+        <h2 className="text-4xl md:text-5xl font-extrabold text-teal-950 mb-4 tracking-tight">Timeline & Architecture</h2>
+        <p className="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto font-medium">An ironclad legal and technical moat to protect Gulf hospitals and Egyptian specialists.</p>
+      </div>
+      
+      {/* Infinite Autoscrolling Timeline Container */}
+      <div className="relative w-full overflow-hidden py-10 flex">
+        {/* Gradient masking for edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-16 md:w-48 bg-gradient-to-r from-slate-50 to-transparent z-20 pointer-events-none"></div>
+        <div className="absolute right-0 top-0 bottom-0 w-16 md:w-48 bg-gradient-to-l from-slate-50 to-transparent z-20 pointer-events-none"></div>
+        
+        <motion.div 
+          animate={{ x: [0, "-50%"] }} 
+          transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
+          className="flex gap-6 md:gap-10 px-4 w-max"
+        >
+          {/* We duplicate the array to allow for seamless 50% looping */}
+          {[...steps, ...steps, ...steps, ...steps].map((s, i) => (
+            <div key={i} className="w-[300px] md:w-[400px] lg:w-[450px] shrink-0 bg-white border-2 border-emerald-100 p-6 md:p-8 rounded-3xl shadow-lg relative overflow-hidden group pointer-events-none flex flex-col justify-between h-full">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+              <div>
+                <div className="text-emerald-600 mb-6 relative z-10 bg-emerald-100 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl shadow-sm">{s.icon}</div>
+                <h3 className="text-xl md:text-2xl font-bold text-teal-950 mb-4 relative z-10">{s.title}</h3>
               </div>
+              <p className="text-slate-700 leading-relaxed font-serif italic text-base md:text-lg relative z-10">"{s.desc}"</p>
             </div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   );
@@ -350,31 +399,36 @@ function LoginView({ setView }: { setView: (v: ViewState) => void }) {
 // --- PROVIDER DASHBOARD ---
 function DashboardView({ setView, walletBalance }: { setView: (v: ViewState) => void, walletBalance: number }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      <aside className="w-full md:w-72 bg-teal-950 text-teal-100 flex flex-col p-6 border-r border-teal-900 z-20">
-        <div className="flex items-center gap-3 mb-10 text-2xl font-extrabold text-white"><div className="bg-emerald-600 p-1.5 rounded-md"><Activity className="w-5 h-5" /></div>CareOnCall</div>
-        <div className="mb-8 p-4 bg-teal-900/50 rounded-xl border border-teal-800">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-screen bg-slate-50 flex flex-col md:flex-row overflow-hidden">
+      <aside className="w-full md:w-72 bg-teal-950 text-teal-100 flex flex-col p-4 md:p-6 border-b md:border-b-0 md:border-r border-teal-900 z-20 shrink-0">
+        <div className="flex items-center justify-between md:justify-start gap-3 mb-4 md:mb-10 text-xl md:text-2xl font-extrabold text-white">
+          <div className="flex items-center gap-2">
+            <div className="bg-emerald-600 p-1 md:p-1.5 rounded-md"><Activity className="w-4 h-4 md:w-5 md:h-5" /></div>CareOnCall
+          </div>
+          <button onClick={() => setView('landing')} className="md:hidden flex items-center gap-2 text-red-400 hover:text-red-300 text-xs font-semibold p-1 md:p-2 rounded-lg transition-colors"><LogOut className="w-4 h-4"/></button>
+        </div>
+        <div className="hidden md:block mb-8 p-4 bg-teal-900/50 rounded-xl border border-teal-800">
           <div className="flex gap-3 mb-3"><UserCircle2 className="w-10 h-10 text-emerald-400" /><div><div className="text-white font-bold text-sm">Dr. Ahmed M.</div><div className="text-teal-400 text-xs font-medium">Demerdash Rad Dept.</div></div></div>
         </div>
-        <nav className="space-y-2 flex-1">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-teal-800 text-white font-semibold"><FileText className="w-5 h-5"/> My Queue</div>
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-teal-400 cursor-not-allowed opacity-50"><Wallet className="w-5 h-5"/> Payoneer Wallet</div>
+        <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 flex-1">
+          <div className="flex items-center gap-3 px-4 py-2 md:py-3 rounded-xl bg-teal-800 text-white font-semibold flex-shrink-0 text-sm md:text-base"><FileText className="w-4 h-4 md:w-5 md:h-5"/> My Queue</div>
+          <div className="flex items-center gap-3 px-4 py-2 md:py-3 rounded-xl text-teal-400 cursor-not-allowed opacity-50 flex-shrink-0 text-sm md:text-base"><Wallet className="w-4 h-4 md:w-5 md:h-5"/> Payoneer Wallet</div>
         </nav>
-        <div className="mt-auto pt-6 border-t border-teal-900">
+        <div className="hidden md:flex mt-auto pt-6 border-t border-teal-900">
           <button onClick={() => setView('landing')} className="flex items-center justify-center gap-2 text-red-400 hover:text-red-300 text-sm font-semibold w-full p-2 rounded-lg transition-colors"><LogOut className="w-4 h-4"/> Terminate Session</button>
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shadow-sm z-10">
-          <h1 className="text-2xl font-extrabold text-teal-950 tracking-tight">Specialist Workspace</h1>
-          <div className="flex items-center gap-4">
+      <main className="flex-1 flex flex-col h-full overflow-hidden">
+        <header className="h-16 md:h-20 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between shadow-sm z-10 shrink-0">
+          <h1 className="text-lg md:text-2xl font-extrabold text-teal-950 tracking-tight">Specialist Workspace</h1>
+          <div className="flex items-center gap-2 md:gap-4">
             <span className="hidden md:flex text-sm text-slate-600 font-bold items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100"><span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>Zero-Trust Connection Secured</span>
-            <Bell className="w-6 h-6 text-slate-400" />
+            <Bell className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto w-full p-4 md:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"><div className="text-slate-500 font-bold mb-2 flex items-center gap-2"><FileText className="w-5 h-5 text-teal-600"/> Pending Scans</div><div className="text-4xl font-black text-teal-950 mb-2">3 Awaiting</div></div>
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"><div className="text-slate-500 font-bold mb-2 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-teal-600"/> Monthly Volume</div><div className="text-4xl font-black text-teal-950 mb-2">40 Processed</div></div>
@@ -422,40 +476,40 @@ function SimulationView({ setView, walletBalance, setWalletBalance }: { setView:
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-black flex flex-col">
-      <header className="bg-[#0f1115] border-b border-slate-800 px-6 h-14 flex justify-between items-center text-slate-300">
-        <div className="flex gap-4 items-center">
-          <span className="bg-red-900/40 text-red-400 px-3 py-1 rounded border border-red-500/30 text-xs font-bold uppercase"><Lock className="w-3 h-3 inline mr-1"/> Advisory Terminal</span>
-          <span className="font-mono text-sm text-slate-500">Malpractice Shield: ACTIVE</span>
+      <header className="bg-[#0f1115] border-b border-slate-800 px-4 md:px-6 h-auto md:h-14 py-3 md:py-0 flex flex-col md:flex-row justify-between items-center text-slate-300 gap-3 md:gap-0 shrink-0">
+        <div className="flex gap-2 md:gap-4 items-center w-full md:w-auto justify-between md:justify-start">
+          <span className="bg-red-900/40 text-red-400 px-2 md:px-3 py-1 rounded border border-red-500/30 text-[10px] md:text-xs font-bold uppercase whitespace-nowrap"><Lock className="w-3 h-3 inline mr-1"/> Advisory Terminal</span>
+          <span className="font-mono text-[10px] md:text-sm text-slate-500 hidden sm:inline">Malpractice Shield: ACTIVE</span>
         </div>
-        <button onClick={() => setView('provider-dashboard')} className="text-slate-400 hover:text-white text-sm font-bold bg-slate-800 px-4 py-2 rounded">Cancel & Return ✕</button>
+        <button onClick={() => setView('provider-dashboard')} className="w-full md:w-auto text-slate-400 hover:text-white text-xs md:text-sm font-bold bg-slate-800 px-4 py-2 rounded text-center">Cancel & Return ✕</button>
       </header>
       <div className="flex-1 flex flex-col lg:flex-row relative">
         
         <AnimatePresence>
           {transmitState === 'success' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-8">
-              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white border-2 border-emerald-500 shadow-2xl rounded-3xl p-10 max-w-md text-center w-full">
-                <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
-                <h3 className="text-3xl font-black text-teal-950 mb-3 tracking-tight">Transmission Success</h3>
-                <p className="text-slate-600 font-medium mb-8">Advisory report encrypted and routed to Riyadh General EHR. Shield applied.</p>
-                <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-200 mb-8 overflow-hidden text-center">
-                  <p className="text-xs font-bold text-emerald-800 uppercase tracking-widest mb-1">FinTech Bypass Executed</p>
-                  <p className="text-4xl font-black text-emerald-600">+$30.00 USD</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8">
+              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white border-2 border-emerald-500 shadow-2xl rounded-3xl p-6 md:p-10 max-w-md text-center w-full max-h-screen overflow-y-auto">
+                <CheckCircle className="w-12 h-12 md:w-16 md:h-16 text-emerald-600 mx-auto mb-4" />
+                <h3 className="text-2xl md:text-3xl font-black text-teal-950 mb-3 tracking-tight">Transmission Success</h3>
+                <p className="text-sm md:text-base text-slate-600 font-medium mb-6 md:mb-8">Advisory report encrypted and routed to Riyadh General EHR. Shield applied.</p>
+                <div className="bg-emerald-50 p-4 md:p-6 rounded-2xl border border-emerald-200 mb-6 md:mb-8 overflow-hidden text-center">
+                  <p className="text-[10px] md:text-xs font-bold text-emerald-800 uppercase tracking-widest mb-1">FinTech Bypass Executed</p>
+                  <p className="text-3xl md:text-4xl font-black text-emerald-600">+$30.00 USD</p>
                 </div>
-                <button onClick={() => setView('provider-dashboard')} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">Return to Dashboard <ArrowRight className="w-5 h-5"/></button>
+                <button onClick={() => setView('provider-dashboard')} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 md:py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">Return to Dashboard <ArrowRight className="w-5 h-5"/></button>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="w-full lg:w-[45%] bg-black relative flex flex-col border-r border-slate-800 justify-center">
-          <div className="absolute top-4 left-4 z-10 text-emerald-500 text-xs p-2 border border-emerald-500 bg-emerald-900/20 rounded font-bold uppercase"><Lock className="w-4 h-4 inline mr-1"/> VISUAL DATA ONLY</div>
-          <div className="w-96 h-96 mx-auto rounded-full border border-slate-700/50 bg-[radial-gradient(circle_at_center,_#334155_0%,_#000000_70%)] animate-pulse flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.05)]">
-             <Activity className="w-32 h-32 text-slate-400 opacity-20" />
+        <div className="w-full lg:w-[45%] h-64 lg:h-auto bg-black relative flex flex-col border-b lg:border-r border-slate-800 justify-center shrink-0">
+          <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10 text-emerald-500 text-[10px] md:text-xs p-1.5 md:p-2 border border-emerald-500 bg-emerald-900/20 rounded font-bold uppercase"><Lock className="w-3 h-3 md:w-4 md:h-4 inline mr-1"/> VISUAL DATA</div>
+          <div className="w-48 h-48 md:w-96 md:h-96 mx-auto rounded-full border border-slate-700/50 bg-[radial-gradient(circle_at_center,_#334155_0%,_#000000_70%)] animate-pulse flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.05)]">
+             <Activity className="w-16 h-16 md:w-32 md:h-32 text-slate-400 opacity-20" />
           </div>
         </div>
 
-        <div className="w-full lg:w-[55%] bg-slate-50 flex flex-col p-8 lg:p-12">
+        <div className="w-full lg:w-[55%] bg-slate-50 flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
           <h2 className="text-3xl font-extrabold text-teal-950 mb-6 tracking-tight">Diagnostic Report</h2>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-8 flex gap-4 shadow-sm">
             <AlertTriangle className="w-8 h-8 text-amber-600 shrink-0" />
