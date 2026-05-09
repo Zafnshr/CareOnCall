@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, ShieldCheck, Lock, CheckCircle, Wallet, FileText, 
-  ArrowRight, Clock, Building, GraduationCap, PlayCircle, LogOut, 
-  Search, Bell, Settings, ZoomIn, Maximize, Contrast, Download, 
-  AlertTriangle, Users, Calculator, Phone, Mail, MapPin, Camera
+  ArrowRight, Clock, Building, GraduationCap, ChevronRight, Calculator,
+  Phone, Mail, MapPin, Camera, UserCircle2, Bell, LogOut, ZoomIn, 
+  Maximize, Contrast, Download, AlertTriangle, Users, FileDigit, Server
 } from 'lucide-react';
 
 type ViewState = 'landing' | 'provider-login' | 'provider-dashboard' | 'scan-simulation';
@@ -12,7 +12,6 @@ type TabState = 'home' | 'pipeline' | 'pricing' | 'team' | 'contact';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewState>('landing');
-  const [activeTab, setActiveTab] = useState<TabState>('home');
   const [walletBalance, setWalletBalance] = useState<number>(1200);
 
   useEffect(() => {
@@ -20,166 +19,117 @@ export default function App() {
   }, [currentView]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-emerald-200">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-emerald-200 flex flex-col">
       <AnimatePresence mode="wait">
-        {currentView === 'landing' && (
-          <LandingContainer 
-            key="landing" 
-            setView={setCurrentView} 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-          />
-        )}
-        {currentView === 'provider-login' && (
-          <LoginView key="login" setView={setCurrentView} />
-        )}
-        {currentView === 'provider-dashboard' && (
-          <DashboardView key="dashboard" setView={setCurrentView} walletBalance={walletBalance} />
-        )}
-        {currentView === 'scan-simulation' && (
-          <SimulationView 
-            key="simulation" 
-            setView={setCurrentView} 
-            walletBalance={walletBalance} 
-            setWalletBalance={setWalletBalance} 
-          />
-        )}
+        {currentView === 'landing' && <LandingView key="landing" setView={setCurrentView} />}
+        {currentView === 'provider-login' && <LoginView key="login" setView={setCurrentView} />}
+        {currentView === 'provider-dashboard' && <DashboardView key="dashboard" setView={setCurrentView} walletBalance={walletBalance} />}
+        {currentView === 'scan-simulation' && <SimulationView key="simulation" setView={setCurrentView} walletBalance={walletBalance} setWalletBalance={setWalletBalance} />}
       </AnimatePresence>
     </div>
   );
 }
 
-// ----------------------------------------------------
-// B2B LANDING CONTAINER & NAVBAR
-// ----------------------------------------------------
-function LandingContainer({ 
-  setView, activeTab, setActiveTab 
-}: { 
-  setView: (v: ViewState) => void, 
-  activeTab: TabState, 
-  setActiveTab: (t: TabState) => void 
-}) {
+// --- LANDING CONTAINER ---
+function LandingView({ setView }: { setView: (v: ViewState) => void }) {
+  const [activeTab, setActiveTab] = useState<TabState>('home');
+
+  const tabs = [
+    { id: 'home', label: 'Overview' },
+    { id: 'pipeline', label: 'Pipeline & Compliance' },
+    { id: 'pricing', label: 'Enterprise ROI' },
+    { id: 'team', label: 'Founders' },
+    { id: 'contact', label: 'Contact' }
+  ] as const;
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col min-h-screen content-center">
-      <nav className="sticky top-0 z-50 bg-slate-50/90 backdrop-blur-md border-b border-teal-100 shadow-sm w-full">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col min-h-screen">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-teal-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('home')}>
-            <div className="bg-emerald-600 p-2 rounded-lg shadow-md">
-              <Activity className="text-white w-6 h-6" />
-            </div>
+            <div className="bg-emerald-600 p-2 rounded-lg shadow-md"><Activity className="text-white w-6 h-6" /></div>
             <span className="text-2xl font-extrabold text-teal-950 tracking-tight">CareOnCall</span>
           </div>
-          
           <div className="hidden lg:flex items-center gap-8 font-semibold text-slate-600">
-            <NavBtn label="Overview" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-            <NavBtn label="Talent Pipeline & Compliance" active={activeTab === 'pipeline'} onClick={() => setActiveTab('pipeline')} />
-            <NavBtn label="Enterprise Pricing" active={activeTab === 'pricing'} onClick={() => setActiveTab('pricing')} />
-            <NavBtn label="Our Founders" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
-            <NavBtn label="Contact Us" active={activeTab === 'contact'} onClick={() => setActiveTab('contact')} />
+            {tabs.map(t => (
+              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`relative px-1 py-2 ${activeTab === t.id ? 'text-emerald-700' : 'hover:text-emerald-600'}`}>
+                {t.label}
+                {activeTab === t.id && <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 rounded-full" />}
+              </button>
+            ))}
           </div>
-
-          <motion.button 
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={() => setView('provider-login')}
-            className="bg-teal-900 hover:bg-teal-950 text-white px-6 py-2.5 rounded-full font-bold shadow-md transition-all flex items-center gap-2"
-          >
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setView('provider-login')} className="bg-teal-900 hover:bg-teal-950 text-white px-6 py-2.5 rounded-full font-bold shadow-md flex items-center gap-2">
             Provider Portal <ArrowRight className="w-4 h-4" />
           </motion.button>
         </div>
       </nav>
 
-      <main className="flex-1 flex flex-col items-center">
+      <main className="flex-1 flex flex-col">
         <AnimatePresence mode="wait">
-          {activeTab === 'home' && <TabOverview key="home" />}
+          {activeTab === 'home' && <TabHome key="home" setActiveTab={setActiveTab} />}
           {activeTab === 'pipeline' && <TabPipeline key="pipeline" />}
           {activeTab === 'pricing' && <TabPricing key="pricing" />}
           {activeTab === 'team' && <TabTeam key="team" />}
           {activeTab === 'contact' && <TabContact key="contact" />}
         </AnimatePresence>
       </main>
+
+      <footer className="bg-teal-950 text-teal-200 py-10 border-t border-teal-900 mt-auto">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Activity className="text-emerald-500 w-6 h-6" />
+            <span className="text-xl font-extrabold text-white tracking-tight">CareOnCall</span>
+          </div>
+          <p className="text-sm font-medium">AUC Capstone Project. Validated B2B Health-Tech Infrastructure.</p>
+          <div className="flex gap-6 text-sm font-semibold text-teal-400"><span>HQ: Riyadh, KSA</span><span>OPS: Cairo, EGY</span></div>
+        </div>
+      </footer>
     </motion.div>
   );
 }
 
-function NavBtn({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) {
+// --- TABS ---
+function TabHome({ setActiveTab }: { setActiveTab: (t: TabState) => void }) {
   return (
-    <button 
-      onClick={onClick}
-      className={`relative px-1 py-2 transition-colors ${active ? 'text-emerald-700' : 'hover:text-emerald-600'}`}
-    >
-      {label}
-      {active && (
-        <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 rounded-full" />
-      )}
-    </button>
-  );
-}
-
-// ----------------------------------------------------
-// TAB 1: OVERVIEW (HOME)
-// ----------------------------------------------------
-function TabOverview() {
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full">
-      <section className="relative pt-20 pb-32 overflow-hidden bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-emerald-50/80 via-slate-50 to-slate-50">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1">
+      <section className="relative pt-20 pb-32 overflow-hidden">
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/40 via-slate-50 to-slate-50"></div>
         <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1 text-left">
-            <h1 className="text-5xl lg:text-7xl font-extrabold text-teal-950 leading-[1.1] mb-6 tracking-tight">
-              Doctors as a Service. <br/>
-              <span className="text-emerald-600">Instant Infrastructure.</span>
-            </h1>
-            <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl font-medium">
-              Stop bleeding capital on 6-month recruitment cycles and visa delays. Seamlessly integrate board-certified Egyptian specialists directly into your hospital's EHR within 48 hours.
-            </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/80 border border-emerald-200 text-emerald-800 font-bold text-xs uppercase tracking-wider mb-6">
+              <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
+              Solving the 15,000+ GCC Deficit
+            </div>
+            <h1 className="text-5xl lg:text-7xl font-extrabold text-teal-950 leading-[1.1] mb-6 tracking-tight">Doctors as a Service. <br/><span className="text-emerald-600">Instant Infrastructure.</span></h1>
+            <p className="text-xl text-slate-600 mb-10 leading-relaxed font-medium">Stop bleeding capital on long recruitment cycles and visa delays. Seamlessly integrate board-certified Egyptian specialists directly into your hospital's EHR within 48 hours.</p>
             <div className="flex items-center gap-4">
-              <motion.button whileHover={{ y: -2, boxShadow: "0px 10px 20px rgba(5,150,105,0.2)" }} className="bg-emerald-600 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2">
-                Integrate EHR Today <ArrowRight className="w-5 h-5" />
-              </motion.button>
+              <motion.button onClick={() => setActiveTab('contact')} whileHover={{ y: -2 }} className="bg-emerald-600 text-white px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-2 shadow-lg">Integrate EHR Today <ChevronRight className="w-5 h-5"/></motion.button>
+              <motion.button onClick={() => setActiveTab('pricing')} whileHover={{ y: -2 }} className="bg-white border-2 border-teal-800 text-teal-900 px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-2">Calculate ROI</motion.button>
             </div>
           </div>
-          
-          <div className="flex-1 w-full relative h-[450px] hidden lg:block">
-            <motion.div animate={{ y: [-10, 10, -10] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }} className="absolute inset-0 flex items-center justify-center">
-               <div className="absolute left-0 top-1/4 bg-white/90 backdrop-blur p-6 rounded-2xl shadow-xl border border-slate-200 z-20">
-                 <div className="flex items-center gap-3 mb-4"><Building className="text-teal-700 w-8 h-8" /><h3 className="font-bold text-slate-800">Riyadh Hub</h3></div>
-                 <div className="h-2 w-full bg-slate-200 rounded mb-2"></div>
-                 <div className="text-xs font-bold text-red-500 bg-red-50 p-1 rounded inline-block">Demand: Critical</div>
-               </div>
-
-               <motion.div initial={{ x: -120, opacity: 0 }} animate={{ x: 120, opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }} className="absolute z-10 w-24 h-1.5 bg-emerald-400 blur-[2px] rounded-full" />
-
-               <div className="absolute right-0 bottom-1/4 bg-white/90 backdrop-blur p-6 rounded-2xl shadow-xl border border-slate-200 z-20">
-                 <div className="flex items-center gap-3 mb-4"><GraduationCap className="text-emerald-600 w-8 h-8" /><h3 className="font-bold text-slate-800">Cairo Hub</h3></div>
-                 <div className="h-2 w-full bg-emerald-100 rounded mb-2"></div>
-                 <div className="text-xs font-bold text-emerald-700 bg-emerald-50 p-1 rounded inline-block">SLA: 4h TAT</div>
-               </div>
-
-               <svg className="absolute inset-0 w-full h-full opacity-40 z-0">
-                 <path d="M 120 150 Q 300 180 300 350 T 500 350" fill="transparent" stroke="#059669" strokeWidth="4" strokeDasharray="8 8" className="animate-pulse" />
-               </svg>
-            </motion.div>
+          <div className="flex-1 relative w-full h-[500px] perspective-1000 hidden lg:block">
+             <motion.div animate={{ y: [-10, 10, -10] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }} className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute left-0 top-1/4 bg-white/90 backdrop-blur p-6 rounded-2xl shadow-xl border border-slate-200 w-64 z-20">
+                  <div className="flex items-center gap-3 mb-4"><Building className="text-teal-700 w-8 h-8" /><h3 className="font-bold text-slate-800">Gulf Hospital</h3></div>
+                  <div className="space-y-2"><div className="h-2 w-full bg-slate-200 rounded text-transparent">_</div><div className="text-xs font-bold text-red-500 mt-2 bg-red-50 p-1 rounded inline-block">Demand: Critical</div></div>
+                </div>
+                <motion.div initial={{ x: -120, opacity: 0 }} animate={{ x: 120, opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }} className="absolute z-10 w-24 h-1.5 bg-emerald-400 blur-[2px] rounded-full" />
+                <div className="absolute right-0 bottom-1/4 bg-white/90 backdrop-blur p-6 rounded-2xl shadow-xl border border-slate-200 w-64 z-20">
+                  <div className="flex items-center gap-3 mb-4"><GraduationCap className="text-emerald-600 w-8 h-8" /><h3 className="font-bold text-slate-800">Egyptian Specialist</h3></div>
+                  <div className="space-y-2"><div className="h-2 w-full bg-emerald-100 rounded text-transparent">_</div><div className="text-xs font-bold text-emerald-700 mt-2 bg-emerald-50 p-1 rounded inline-block">SLA: 4 Hour Turnaround</div></div>
+                </div>
+                <svg className="absolute inset-0 w-full h-full z-0 opacity-40"><path d="M 120 180 Q 300 180 300 350 T 500 350" fill="transparent" stroke="#059669" strokeWidth="4" strokeDasharray="8 8" className="animate-pulse" /></svg>
+             </motion.div>
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-white border-t border-slate-200 w-full">
+      <section className="py-20 bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div whileHover={{ y: -5, scale: 1.02 }} className="p-8 bg-emerald-50 rounded-3xl border border-emerald-100 shadow-sm">
-              <div className="text-5xl font-black text-emerald-600 mb-4">85.1%</div>
-              <h3 className="text-xl font-bold text-teal-900 mb-2">Retention Guarantee</h3>
-              <p className="text-slate-600 font-medium">Of surveyed Egyptian physicians would stay in Egypt—combating brain drain.</p>
-            </motion.div>
-            <motion.div whileHover={{ y: -5, scale: 1.02 }} className="p-8 bg-teal-50 rounded-3xl border border-teal-100 shadow-sm">
-              <div className="text-5xl font-black text-teal-700 mb-4">56%</div>
-              <h3 className="text-xl font-bold text-teal-900 mb-2">The Mass Exodus</h3>
-              <p className="text-slate-600 font-medium">Of physicians registered are practicing abroad due to low pay.</p>
-            </motion.div>
-            <motion.div whileHover={{ y: -5, scale: 1.02 }} className="p-8 bg-slate-50 border border-slate-200 rounded-3xl shadow-sm">
-              <div className="text-5xl font-black text-slate-600 mb-4">57.1%</div>
-              <h3 className="text-xl font-bold text-teal-900 mb-2">Workflow Preference</h3>
-              <p className="text-slate-600 font-medium">Requested to provide support via asynchronous remote workflows.</p>
-            </motion.div>
+            <DataCard number="85.1%" title="Retention Guarantee" desc="Egyptian physicians would stay if financial conditions improved. (Kabbash et al. 2021)" color="emerald" />
+            <DataCard number="56%" title="Already Gone" desc="Of registered Egyptian physicians are currently practicing abroad due to severe underpayment." color="red" />
+            <DataCard number="57.1%" title="Workflow Preference" desc="Explicitly requested to provide medical support via asynchronous remote workflows during downtime." color="teal" />
           </div>
         </div>
       </section>
@@ -187,32 +137,40 @@ function TabOverview() {
   );
 }
 
-// ----------------------------------------------------
-// TAB 2: PIPELINE & COMPLIANCE
-// ----------------------------------------------------
+function DataCard({ number, title, desc, color }: { number: string, title: string, desc: string, color: 'emerald' | 'red' | 'teal' }) {
+  const styles = { emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100', red: 'text-red-500 bg-red-50 border-red-100', teal: 'text-teal-700 bg-teal-50 border-teal-100' };
+  return (
+    <div className={`p-8 rounded-3xl border ${styles[color].split(' ')[1]} ${styles[color].split(' ')[2]}`}>
+      <div className={`text-5xl lg:text-6xl font-black ${styles[color].split(' ')[0]} mb-4`}>{number}</div>
+      <h3 className="text-xl font-bold text-teal-900 mb-2">{title}</h3>
+      <p className="text-slate-600 font-medium">{desc}</p>
+    </div>
+  );
+}
+
 function TabPipeline() {
   const steps = [
-    { title: "Exclusive Institutional Networks", desc: "We formally partner with top-tier university hospitals like Ain Shams and Demerdash to onboard pre-credentialed faculty.", icon: <Building /> },
-    { title: "The 'Advisory Opinion' Malpractice Shield", desc: "Cross-border liability is neutralized. Our specialists provide an 'Advisory Opinion', shifting primary liability to the Gulf attending physician.", icon: <ShieldCheck /> },
-    { title: "Programmatic PII-Stripping & Zero Trust", desc: "API programmatically strips all Personally Identifiable Information (PII) before transmission for End-to-End Encrypted HIPAA compliance.", icon: <Lock /> },
-    { title: "The FinTech Bypass", desc: "Routing compensation directly in USD to offshore digital wallets, protecting physician wealth and ensuring retention.", icon: <Wallet /> },
+    { icon: <Lock />, title: "1. Zero Trust Privacy Model", desc: "Military-grade data encryption, continuous authentication, and programmatic PII-stripping to ensure strict HIPAA/GCC compliance. Zero Patient Identifiable Information crosses borders." },
+    { icon: <ShieldCheck />, title: "2. The 'Advisory Opinion' Malpractice Shield", desc: "Cross-border liability neutralized. Egyptian specialists act as advisors; final clinical liability and patient intervention remain 100% with the on-site Gulf physician." },
+    { icon: <GraduationCap />, title: "3. Safety & Credentialing", desc: "Only board-certified physicians from elite institutions like Ain Shams and Demerdash are admitted, subjected to continuous peer-review auditing." },
+    { icon: <Wallet />, title: "4. The FinTech Bypass", desc: "Routing compensation directly in USD to offshore digital wallets, protecting physician wealth and ensuring retention in their home country." }
   ];
-
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full py-20 bg-slate-50 flex justify-center">
-      <div className="max-w-4xl px-6 w-full">
-        <h2 className="text-4xl font-extrabold text-teal-950 mb-12 text-center">Talent Pipeline & Compliance Architecture</h2>
-        <div className="space-y-8 relative before:absolute before:inset-0 before:left-8 before:-translate-x-px before:h-full before:w-1 before:bg-emerald-200">
-          {steps.map((step, idx) => (
-            <motion.div key={idx} whileHover={{ x: 5 }} className="relative flex items-center pl-20">
-              <div className="absolute left-4 w-12 h-12 bg-white border-4 border-emerald-500 rounded-full flex items-center justify-center text-emerald-600 shadow-md">
-                {React.cloneElement(step.icon as React.ReactElement, { size: 20 })}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 bg-slate-50 py-20">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-extrabold text-teal-950 mb-4">Infrastructure & Compliance Architecture</h2>
+          <p className="text-xl text-slate-600 max-w-3xl mx-auto font-medium">An ironclad legal and technical moat to protect Gulf hospitals and Egyptian specialists.</p>
+        </div>
+        <div className="space-y-12 relative before:absolute before:inset-0 before:ml-8 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-emerald-200">
+          {steps.map((s, i) => (
+            <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full border-4 border-white bg-emerald-100 text-emerald-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">{s.icon}</div>
+              <div className="w-[calc(100%-5rem)] md:w-[calc(50%-3rem)] bg-white border border-slate-100 p-8 rounded-2xl shadow-sm hover:shadow-md transition">
+                <h3 className="text-xl font-bold text-teal-900 mb-2">{s.title}</h3>
+                <p className="text-slate-600 leading-relaxed font-medium">{s.desc}</p>
               </div>
-              <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm w-full">
-                <h3 className="text-2xl font-bold text-teal-900 mb-2">{step.title}</h3>
-                <p className="text-slate-600 font-medium text-lg">{step.desc}</p>
-              </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
@@ -220,116 +178,109 @@ function TabPipeline() {
   );
 }
 
-// ----------------------------------------------------
-// TAB 3: PRICING ROI CALCULATOR
-// ----------------------------------------------------
 function TabPricing() {
-  const [scans, setScans] = useState<number>(300);
-  const baseRetainer = 1500;
+  const [scans, setScans] = useState<number>(400);
+  const baseSaaS = 1500;
   const variableCost = scans * 30;
-  const totalCost = baseRetainer + variableCost;
-  const capex = 20000 + (scans * 15);
-  const savings = capex - totalCost;
+  const totalCost = baseSaaS + variableCost;
+  const traditionalCapEx = 20000 + (scans * 15);
+  const savings = traditionalCapEx - totalCost;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full py-20 bg-white flex justify-center">
-      <div className="max-w-6xl w-full px-6">
-        <h2 className="text-4xl font-extrabold text-teal-950 mb-12 text-center">Enterprise ROI Calculator</h2>
-        <div className="grid lg:grid-cols-2 gap-12">
-          
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-10 shadow-sm">
-            <h3 className="text-2xl font-bold text-teal-900 mb-8 border-b border-slate-200 pb-4">Adjust Volume</h3>
-            <div className="mb-10">
-              <label className="flex justify-between font-bold text-slate-700 mb-4">
-                <span>Estimated Asynchronous Scans / Month</span>
-                <span className="text-emerald-600 bg-emerald-50 px-3 py-1 rounded-md">{scans} Scans</span>
-              </label>
-              <input 
-                type="range" min="100" max="1000" step="50" value={scans}
-                onChange={(e) => setScans(Number(e.target.value))}
-                className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-emerald-600"
-              />
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 bg-white py-20">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-extrabold text-teal-950 mb-4">Enterprise ROI Calculator</h2>
+          <p className="text-xl text-slate-600 font-medium">Shift from massive fixed CapEx to lean, pay-per-read variable costs.</p>
+        </div>
+        <div className="flex flex-col lg:flex-row gap-12 items-start">
+          <div className="flex-1 bg-slate-50 p-10 rounded-3xl shadow-sm border border-slate-200 w-full">
+            <h3 className="text-2xl font-bold text-teal-900 mb-6">Estimate Your Savings</h3>
+            <div className="mb-8">
+              <label className="flex justify-between font-bold text-slate-700 mb-4"><span>Estimated Scans / Month</span><span className="text-emerald-600 text-xl">{scans}</span></label>
+              <input type="range" min="100" max="1000" step="50" value={scans} onChange={(e) => setScans(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
             </div>
-            <div className="space-y-4">
-              <div className="flex justify-between text-slate-600 font-medium p-3 bg-white rounded-xl shadow-sm border border-slate-100">
-                <span>Base SaaS Retainer</span><span>${baseRetainer.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-slate-600 font-medium p-3 bg-white rounded-xl shadow-sm border border-slate-100">
-                <span>Variable Cost ({scans} × $30)</span><span>${variableCost.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-xl font-bold text-teal-900 p-4 bg-teal-50 rounded-xl mt-4 border border-teal-100">
-                <span>CareOnCall Total</span><span className="text-emerald-600">${totalCost.toLocaleString()}</span>
-              </div>
+            <div className="space-y-4 border-t border-slate-200 pt-6">
+              <div className="flex justify-between text-slate-600 font-medium"><span>SaaS Platform Retainer</span><span>$1,500</span></div>
+              <div className="flex justify-between text-slate-600 font-medium"><span>Variable Cost ({scans} @ $30/read)</span><span>${variableCost.toLocaleString()}</span></div>
+              <div className="flex justify-between text-2xl font-black text-teal-950 pt-4 border-t border-slate-200"><span>CareOnCall Total:</span><span className="text-emerald-600">${totalCost.toLocaleString()}</span></div>
             </div>
           </div>
-
-          <div className="bg-teal-900 border border-teal-800 rounded-3xl p-10 shadow-xl text-white relative overflow-hidden flex flex-col justify-center">
-            <Calculator className="absolute -right-10 top-0 w-64 h-64 opacity-5 text-teal-100" />
+          <div className="flex-1 bg-teal-900 p-10 rounded-3xl shadow-xl border border-teal-800 w-full text-white relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 opacity-10 text-teal-100"><Calculator className="w-64 h-64" /></div>
             <div className="relative z-10">
-              <p className="text-teal-200 font-bold mb-6 text-sm uppercase tracking-wider">Traditional CapEx Cost</p>
-              <div className="text-5xl font-black text-slate-400 line-through decoration-red-500 mb-10 decoration-4">
-                ${capex.toLocaleString()}
+              <h3 className="text-teal-200 font-bold mb-2 uppercase tracking-wider">Traditional CapEx vs DaaS</h3>
+              <p className="text-sm text-teal-100/70 mb-8">Compare DaaS against traditional 6-month recruitment, visa processing, housing, and locum fees.</p>
+              <div className="mb-6">
+                <p className="text-teal-300 font-medium mb-1">Old Traditional Cost (Est.)</p>
+                <p className="text-3xl font-bold text-slate-400 line-through decoration-red-500/70">${traditionalCapEx.toLocaleString()}</p>
               </div>
-              <p className="text-teal-200 font-bold mb-2 text-sm uppercase tracking-wider">Your Monthly Savings</p>
-              <motion.div 
-                key={savings} initial={{ scale: 1.1, color: '#6ee7b7' }} animate={{ scale: 1, color: '#34d399' }}
-                className="text-7xl font-black tracking-tight"
-              >
-                ${savings.toLocaleString()}
-              </motion.div>
+              <div>
+                <p className="text-teal-200 font-medium mb-1">Your Monthly Savings</p>
+                <motion.p key={savings} initial={{ scale: 1.1, color: '#6ee7b7' }} animate={{ scale: 1, color: '#10b981' }} className="text-6xl font-black tracking-tight">${savings.toLocaleString()}</motion.p>
+              </div>
             </div>
           </div>
-
         </div>
       </div>
     </motion.div>
   );
 }
 
-// ----------------------------------------------------
-// TAB 4: OUR FOUNDERS (LIVE UPLOADS)
-// ----------------------------------------------------
 function TabTeam() {
-  const [avatars, setAvatars] = useState<Record<string, string>>({});
+  const [photos, setPhotos] = useState<Record<string, string>>({});
   
-  const handleUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const savedPhotos = localStorage.getItem('careoncall_avatars');
+    if (savedPhotos) setPhotos(JSON.parse(savedPhotos));
+  }, []);
+
+  const team = [
+    { id: 'kareem', name: 'Kareem Amr', role: 'Leader | Strategy & Operations' },
+    { id: 'abdelrahman', name: 'Abdelrahman Hani', role: 'Clinical Research' },
+    { id: 'hatem', name: 'Mohammed Hatem', role: 'Provider Relations' },
+    { id: 'mohab', name: 'Mohab Adel', role: 'Technical Infrastructure' },
+    { id: 'emad', name: 'Mohammed Emad', role: 'Enterprise Partnerships' }
+  ];
+
+  const handleImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const url = URL.createObjectURL(e.target.files[0]);
-      setAvatars(prev => ({ ...prev, [id]: url }));
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const newPhotos = { ...photos, [id]: event.target.result as string };
+          setPhotos(newPhotos);
+          localStorage.setItem('careoncall_avatars', JSON.stringify(newPhotos));
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
     }
   };
 
-  const founders = [
-    { id: '1', name: "Kareem Amr", role: "Leader" },
-    { id: '2', name: "Abdelrahman Hani", role: "Clinical Research" },
-    { id: '3', name: "Mohammed Hatem", role: "Provider Relations" },
-    { id: '4', name: "Mohab Adel", role: "Technical Infrastructure" },
-    { id: '5', name: "Mohammed Emad", role: "Enterprise Partnerships" },
-  ];
-
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full py-20 bg-slate-50 flex justify-center">
-      <div className="max-w-6xl w-full px-6">
-        <h2 className="text-4xl font-extrabold text-teal-950 mb-16 text-center">The Founders Behind the Bridge</h2>
-        <div className="flex flex-wrap justify-center gap-12">
-          {founders.map((founder) => (
-            <motion.div key={founder.id} whileHover={{ y: -5, scale: 1.05 }} className="flex flex-col items-center">
-              <label className="relative cursor-pointer group">
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload(founder.id, e)} />
-                <div className="w-48 h-48 rounded-full border-4 border-emerald-500 bg-white flex items-center justify-center overflow-hidden relative shadow-lg">
-                  {avatars[founder.id] ? (
-                    <img src={avatars[founder.id]} alt={founder.name} className="w-full h-full object-cover" />
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 bg-slate-50 py-20">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-extrabold text-teal-950 mb-4">The Founders Behind the Bridge</h2>
+          <p className="text-xl text-slate-600 font-medium">Click on any profile icon to securely upload personnel credentials.</p>
+        </div>
+        <div className="flex flex-wrap justify-center gap-10">
+          {team.map((member) => (
+            <div key={member.id} className="flex flex-col items-center group w-64">
+              <label className="relative cursor-pointer mb-6">
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(member.id, e)} />
+                <div className="w-48 h-48 rounded-full border-4 border-emerald-500 bg-white flex items-center justify-center overflow-hidden transition-all shadow-lg group-hover:shadow-xl relative">
+                  {photos[member.id] ? (
+                    <img src={photos[member.id]} alt={member.name} className="w-full h-full object-cover" />
                   ) : (
                     <Users className="w-16 h-16 text-slate-300 group-hover:text-emerald-500 transition-colors" />
                   )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                    <Camera className="w-8 h-8" />
-                  </div>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"><Camera className="w-8 h-8" /></div>
                 </div>
               </label>
-              <h3 className="text-xl font-bold text-teal-950 mt-6">{founder.name}</h3>
-              <p className="text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mt-2">{founder.role}</p>
-            </motion.div>
+              <h3 className="text-xl font-bold text-teal-900 text-center">{member.name}</h3>
+              <p className="text-sm font-semibold text-emerald-600 text-center mt-1 bg-emerald-50 px-3 py-1 rounded-full">{member.role}</p>
+            </div>
           ))}
         </div>
       </div>
@@ -337,46 +288,33 @@ function TabTeam() {
   );
 }
 
-// ----------------------------------------------------
-// TAB 5: CONTACT US
-// ----------------------------------------------------
 function TabContact() {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full py-20 bg-white flex justify-center">
-      <div className="max-w-5xl w-full px-6">
-        <h2 className="text-4xl font-extrabold text-teal-950 mb-12 text-center">Initiate Integration</h2>
-        <div className="bg-slate-50 border border-slate-200 rounded-3xl shadow-lg flex flex-col md:flex-row overflow-hidden">
-          
-          <div className="md:w-5/12 bg-teal-950 p-12 text-teal-50 flex flex-col relative overflow-hidden">
-             <Activity className="absolute -bottom-10 -left-10 w-64 h-64 opacity-10 text-emerald-500" />
-             <div className="relative z-10 space-y-8">
-               <h3 className="text-2xl font-bold text-white">Global Presence</h3>
-               <div className="flex gap-4">
-                 <MapPin className="text-emerald-500 shrink-0 mt-1" />
-                 <div><p className="font-bold">HQ</p><p className="text-teal-200">King Fahd Road, Riyadh, KSA</p></div>
-               </div>
-               <div className="flex gap-4">
-                 <MapPin className="text-emerald-500 shrink-0 mt-1" />
-                 <div><p className="font-bold">Ops</p><p className="text-teal-200">The Greek Campus, Cairo, EGY</p></div>
-               </div>
-               <div className="flex gap-4 items-center">
-                 <Phone className="text-emerald-500 shrink-0" /><p className="font-medium">+966 50 555 0192</p>
-               </div>
-               <div className="flex gap-4 items-center">
-                 <Mail className="text-emerald-500 shrink-0" /><p className="font-medium">enterprise@careoncall.io</p>
-               </div>
-             </div>
-          </div>
-
-          <div className="md:w-7/12 p-12 bg-white">
-            <form onSubmit={e => e.preventDefault()} className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div><label className="block text-sm font-bold text-slate-700 mb-2">Name</label><input type="text" className="w-full border-slate-300 rounded-xl px-4 py-3 bg-slate-50 border focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
-                <div><label className="block text-sm font-bold text-slate-700 mb-2">Hospital Name</label><input type="text" className="w-full border-slate-300 rounded-xl px-4 py-3 bg-slate-50 border focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 bg-white py-20">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="bg-slate-50 rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col md:flex-row">
+          <div className="bg-teal-900 text-white p-12 md:w-2/5 relative overflow-hidden">
+            <div className="absolute -bottom-20 -left-20 opacity-10"><Activity className="w-96 h-96" /></div>
+            <div className="relative z-10">
+              <h3 className="text-3xl font-extrabold mb-8">Initiate Integration</h3>
+              <div className="space-y-8">
+                <div className="flex items-start gap-4"><MapPin className="w-6 h-6 text-emerald-400 shrink-0" /><div><p className="font-bold text-lg">Global HQ</p><p className="text-teal-200">King Fahd Road, Riyadh, KSA</p></div></div>
+                <div className="flex items-start gap-4"><MapPin className="w-6 h-6 text-emerald-400 shrink-0" /><div><p className="font-bold text-lg">Operations</p><p className="text-teal-200">The Greek Campus, Cairo, EGY</p></div></div>
+                <div className="flex items-center gap-4 pt-6 border-t border-teal-800"><Phone className="w-5 h-5 text-emerald-400 shrink-0" /><p className="font-medium">+966 50 555 0192</p></div>
+                <div className="flex items-center gap-4"><Mail className="w-5 h-5 text-emerald-400 shrink-0" /><p className="font-medium">enterprise@careoncall.io</p></div>
               </div>
-              <div><label className="block text-sm font-bold text-slate-700 mb-2">Work Email</label><input type="email" className="w-full border-slate-300 rounded-xl px-4 py-3 bg-slate-50 border focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
-              <div><label className="block text-sm font-bold text-slate-700 mb-2">Inquiry</label><textarea rows={4} className="w-full border-slate-300 rounded-xl px-4 py-3 bg-slate-50 border focus:ring-2 focus:ring-emerald-500 outline-none resize-none"></textarea></div>
-              <motion.button whileHover={{ scale: 1.02 }} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-md cursor-pointer hover:bg-emerald-700">Submit Integration Request</motion.button>
+            </div>
+          </div>
+          <div className="p-12 md:w-3/5 bg-white">
+            <h3 className="text-2xl font-bold text-teal-950 mb-6">Request an Audit</h3>
+            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+              <div className="grid grid-cols-2 gap-6">
+                <div><label className="block text-sm font-bold text-slate-700 mb-2">Name</label><input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
+                <div><label className="block text-sm font-bold text-slate-700 mb-2">Hospital</label><input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
+              </div>
+              <div><label className="block text-sm font-bold text-slate-700 mb-2">Work Email</label><input type="email" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
+              <div><label className="block text-sm font-bold text-slate-700 mb-2">Inquiry</label><textarea rows={3} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none resize-none"></textarea></div>
+              <button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-xl transition-colors shadow-md w-full">Submit Request</button>
             </form>
           </div>
         </div>
@@ -385,32 +323,23 @@ function TabContact() {
   );
 }
 
-// ----------------------------------------------------
-// PROVIDER LOGIN
-// ----------------------------------------------------
+// --- PROVIDER LOGIN ---
 function LoginView({ setView }: { setView: (v: ViewState) => void }) {
   const [loading, setLoading] = useState(false);
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => setView('provider-dashboard'), 1500);
-  };
-
+  const handleLogin = (e: React.FormEvent) => { e.preventDefault(); setLoading(true); setTimeout(() => setView('provider-dashboard'), 1500); };
+  
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen flex items-center justify-center bg-teal-950 p-6">
-      <div className="w-full max-w-md bg-white border border-slate-200 p-10 rounded-3xl shadow-2xl">
+      <div className="w-full max-w-md bg-white p-10 rounded-3xl shadow-2xl">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-emerald-100 p-4 rounded-full mb-4 text-emerald-600 shadow-inner">
-            <Lock className="w-8 h-8" />
-          </div>
-          <h2 className="text-2xl font-bold text-teal-950 text-center">Secure Provider Terminal</h2>
+          <div className="bg-emerald-100 p-4 rounded-2xl mb-4 text-emerald-600"><Lock className="w-8 h-8" /></div>
+          <h2 className="text-2xl font-bold text-teal-950 text-center">Secure Access Terminal</h2>
         </div>
-        <form onSubmit={onSubmit} className="space-y-6">
-          <div><label className="block text-slate-700 text-sm font-bold mb-2">Institutional Email</label><input readOnly value="dr.ahmed@demerdash.edu.eg" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-mono text-sm text-slate-500 outline-none" /></div>
-          <div><label className="block text-slate-700 text-sm font-bold mb-2">Secure Token</label><input type="password" readOnly value="••••••••••••••••" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-500 tracking-[0.3em] outline-none" /></div>
-          <button type="submit" disabled={loading} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-md hover:bg-emerald-700 transition-colors">
-            {loading ? <span className="animate-pulse">Authenticating zero-trust...</span> : "Authenticate"}
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div><label className="block text-slate-700 text-sm font-bold mb-2">Email</label><input readOnly value="dr.ahmed@demerdash.edu.eg" className="w-full bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-4 py-3 font-mono text-sm outline-none" /></div>
+          <div><label className="block text-slate-700 text-sm font-bold mb-2">Token</label><input type="password" readOnly value="••••••••" className="w-full bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-4 py-3 tracking-widest outline-none" /></div>
+          <button type="submit" disabled={loading} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center mt-4">
+            {loading ? "Authenticating Zero-Trust..." : "Enter Workspace"}
           </button>
         </form>
       </div>
@@ -418,83 +347,62 @@ function LoginView({ setView }: { setView: (v: ViewState) => void }) {
   );
 }
 
-// ----------------------------------------------------
-// PROVIDER DASHBOARD
-// ----------------------------------------------------
+// --- PROVIDER DASHBOARD ---
 function DashboardView({ setView, walletBalance }: { setView: (v: ViewState) => void, walletBalance: number }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-slate-50 flex">
-      <aside className="w-72 bg-teal-950 text-teal-100 flex flex-col p-6 shrink-0 relative z-10 shadow-xl">
-        <div className="flex items-center gap-3 mb-10">
-          <div className="bg-emerald-600 p-2 rounded-lg"><Activity className="text-white w-6 h-6" /></div>
-          <span className="text-2xl font-extrabold text-white">CareOnCall</span>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      <aside className="w-full md:w-72 bg-teal-950 text-teal-100 flex flex-col p-6 border-r border-teal-900 z-20">
+        <div className="flex items-center gap-3 mb-10 text-2xl font-extrabold text-white"><div className="bg-emerald-600 p-1.5 rounded-md"><Activity className="w-5 h-5" /></div>CareOnCall</div>
+        <div className="mb-8 p-4 bg-teal-900/50 rounded-xl border border-teal-800">
+          <div className="flex gap-3 mb-3"><UserCircle2 className="w-10 h-10 text-emerald-400" /><div><div className="text-white font-bold text-sm">Dr. Ahmed M.</div><div className="text-teal-400 text-xs font-medium">Demerdash Rad Dept.</div></div></div>
         </div>
         <nav className="space-y-2 flex-1">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-teal-800 text-white font-bold shadow-inner"><FileText className="w-5 h-5"/> Asynchronous Queue</div>
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-teal-900 cursor-not-allowed opacity-50"><CheckCircle className="w-5 h-5"/> Completed History</div>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-teal-800 text-white font-semibold"><FileText className="w-5 h-5"/> My Queue</div>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-teal-400 cursor-not-allowed opacity-50"><Wallet className="w-5 h-5"/> Payoneer Wallet</div>
         </nav>
-        <div className="mt-auto border-t border-teal-800 pt-6">
-          <button onClick={() => setView('landing')} className="flex items-center gap-2 text-teal-400 hover:text-white font-bold text-sm bg-teal-900/50 hover:bg-teal-900 w-full p-3 rounded-xl transition-colors">
-            <LogOut className="w-4 h-4" /> Terminate Session
-          </button>
+        <div className="mt-auto pt-6 border-t border-teal-900">
+          <button onClick={() => setView('landing')} className="flex items-center justify-center gap-2 text-red-400 hover:text-red-300 text-sm font-semibold w-full p-2 rounded-lg transition-colors"><LogOut className="w-4 h-4"/> Terminate Session</button>
         </div>
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="bg-white h-24 px-10 flex items-center justify-between shadow-sm shrink-0 border-b border-slate-200">
-          <div>
-            <h1 className="text-2xl font-extrabold text-teal-950">Welcome Dr. Ahmed M. | Demerdash Radiology Dept.</h1>
-            <p className="text-sm font-bold text-slate-500 mt-1 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> EHR Link Active & Encrypted
-            </p>
+        <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shadow-sm z-10">
+          <h1 className="text-2xl font-extrabold text-teal-950 tracking-tight">Specialist Workspace</h1>
+          <div className="flex items-center gap-4">
+            <span className="hidden md:flex text-sm text-slate-600 font-bold items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100"><span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>Zero-Trust Connection Secured</span>
+            <Bell className="w-6 h-6 text-slate-400" />
           </div>
         </header>
 
-        <div className="flex-1 p-10 overflow-y-auto">
-          <div className="grid grid-cols-3 gap-6 mb-10">
-            <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
-              <div className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2 flex items-center gap-2"><Clock className="w-4 h-4"/> Pending Queue</div>
-              <div className="text-4xl font-black text-teal-950">3 Scans</div>
-            </div>
-            <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
-              <div className="text-slate-400 font-bold uppercase text-xs tracking-wider mb-2 flex items-center gap-2"><Activity className="w-4 h-4"/> Monthly Volume</div>
-              <div className="text-4xl font-black text-teal-950">40 Scans</div>
-            </div>
-            <div className="bg-teal-900 border border-teal-800 p-6 rounded-3xl shadow-xl text-white relative overflow-hidden flex flex-col justify-center">
-              <Wallet className="absolute -right-4 -top-4 w-24 h-24 opacity-10" />
-              <div className="relative z-10">
-                <div className="text-teal-300 font-bold uppercase text-xs tracking-wider mb-2 flex items-center gap-2">Total Earnings</div>
-                <div className="text-5xl font-black">${walletBalance}.00 <span className="text-xl font-bold text-teal-200">USD</span></div>
-              </div>
+        <div className="flex-1 overflow-y-auto p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"><div className="text-slate-500 font-bold mb-2 flex items-center gap-2"><FileText className="w-5 h-5 text-teal-600"/> Pending Scans</div><div className="text-4xl font-black text-teal-950 mb-2">3 Awaiting</div></div>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"><div className="text-slate-500 font-bold mb-2 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-teal-600"/> Monthly Volume</div><div className="text-4xl font-black text-teal-950 mb-2">40 Processed</div></div>
+            <div className="bg-teal-900 p-6 rounded-2xl border border-teal-800 text-white relative overflow-hidden"><Wallet className="absolute -right-4 -top-4 w-32 h-32 text-teal-800/50" />
+              <div className="relative z-10"><div className="text-teal-300 font-bold mb-2 flex flex-col">Offshore Wallet Balance</div>
+              <div className="text-5xl font-black mb-4 tracking-tight">${walletBalance}.00 <span className="text-lg text-teal-400">USD</span></div>
+              <button className="bg-emerald-500 hover:bg-emerald-400 text-teal-950 text-sm font-bold px-4 py-2.5 rounded-xl w-full shadow-lg transition-colors">Withdraw to Payoneer</button></div>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="font-extrabold text-teal-950 text-xl">Patient Queue</h2>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/80"><h2 className="text-xl font-bold text-teal-950 flex items-center gap-2"><FileDigit className="w-5 h-5 text-teal-600"/> Patient Queue</h2></div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[800px]">
+                <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+                  <tr><th className="p-4">Priority</th><th className="p-4">Case ID</th><th className="p-4">Modality</th><th className="p-4">Compliance Status</th><th className="p-4">Fee</th><th className="p-4 text-right">Action</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  <tr className="hover:bg-slate-50 transition-colors bg-orange-50/30">
+                    <td className="p-4"><span className="text-orange-600 font-bold text-sm bg-orange-100 px-2.5 py-1 rounded-md">Urgent: 3h 45m left</span></td>
+                    <td className="p-4 font-mono font-bold text-teal-900 text-sm">KSA-RM-902</td><td className="p-4 font-bold text-slate-800 text-sm">Fetal Ultrasound</td>
+                    <td className="p-4"><span className="px-2.5 py-1.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex w-max gap-1"><ShieldCheck className="w-3.5 h-3.5" /> PII Redacted</span></td>
+                    <td className="p-4 font-black text-teal-800 text-sm">$30 USD</td>
+                    <td className="p-4 text-right"><motion.button whileHover={{ scale: 1.05 }} onClick={() => setView('scan-simulation')} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-colors w-max whitespace-nowrap">Open PACS Viewer</motion.button></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <table className="w-full text-left">
-              <thead className="bg-white border-b border-slate-100">
-                <tr className="text-slate-400 text-xs font-bold uppercase tracking-wider">
-                  <th className="p-5">Case ID</th>
-                  <th className="p-5">Type</th>
-                  <th className="p-5">Compliance</th>
-                  <th className="p-5 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                  <td className="p-5 font-mono font-bold text-teal-900">KSA-Riy-MR-902</td>
-                  <td className="p-5 font-bold text-slate-700">Complex Fetal Ultrasound</td>
-                  <td className="p-5"><span className="bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-max"><Lock className="w-3 h-3"/> PII Redacted</span></td>
-                  <td className="p-5 text-right">
-                    <motion.button whileHover={{ scale: 1.05 }} onClick={() => setView('scan-simulation')} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2 rounded-xl shadow-md">
-                      Open Viewer
-                    </motion.button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </main>
@@ -502,78 +410,66 @@ function DashboardView({ setView, walletBalance }: { setView: (v: ViewState) => 
   );
 }
 
-// ----------------------------------------------------
-// SCAN SIMULATION (LIVE CLIMAX)
-// ----------------------------------------------------
+// --- SCAN SIMULATION CLIMAX ---
 function SimulationView({ setView, walletBalance, setWalletBalance }: { setView: (v: ViewState) => void, walletBalance: number, setWalletBalance: (v: number) => void }) {
-  const [report, setReport] = useState("");
-  const [transmitStatus, setTransmitStatus] = useState<'idle'|'transmitting'|'success'>('idle');
+  const [transmitState, setTransmitState] = useState<'idle' | 'encrypting' | 'success'>('idle');
+  const [report, setReport] = useState("Single live intrauterine gestation of ~22 weeks. No evident gross morphological anomalies. Routine follow-up recommended.");
 
-  const onTransmit = () => {
-    if(!report.trim()) return;
-    setTransmitStatus('transmitting');
-    setTimeout(() => {
-      setTransmitStatus('success');
-      setWalletBalance(walletBalance + 30);
-    }, 2000);
+  const handleTransmit = () => {
+    setTransmitState('encrypting');
+    setTimeout(() => { setTransmitState('success'); setWalletBalance(walletBalance + 30); }, 2000);
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="min-h-screen bg-slate-900 flex flex-col font-sans">
-      <header className="bg-black border-b border-slate-800 h-14 px-6 flex items-center justify-between text-slate-300 shrink-0">
-        <div className="bg-red-500/20 border border-red-500/30 text-red-500 px-3 py-1 rounded font-bold text-xs uppercase shadow-sm">Secure Terminal: KSA-Riy-MR-902</div>
-        {transmitStatus !== 'success' && <button onClick={() => setView('provider-dashboard')} className="text-slate-500 font-bold hover:text-white text-sm">Abort</button>}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-black flex flex-col">
+      <header className="bg-[#0f1115] border-b border-slate-800 px-6 h-14 flex justify-between items-center text-slate-300">
+        <div className="flex gap-4 items-center">
+          <span className="bg-red-900/40 text-red-400 px-3 py-1 rounded border border-red-500/30 text-xs font-bold uppercase"><Lock className="w-3 h-3 inline mr-1"/> Advisory Terminal</span>
+          <span className="font-mono text-sm text-slate-500">Malpractice Shield: ACTIVE</span>
+        </div>
+        <button onClick={() => setView('provider-dashboard')} className="text-slate-400 hover:text-white text-sm font-bold bg-slate-800 px-4 py-2 rounded">Cancel & Return ✕</button>
       </header>
-
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex flex-col lg:flex-row relative">
         
-        {/* PACS VIEWER */}
-        <div className="w-1/2 bg-black border-r border-slate-800 relative flex flex-col items-center justify-center">
-          <div className="absolute top-6 left-6 text-emerald-500 font-black text-xs uppercase tracking-widest p-2 border border-emerald-500 bg-emerald-900/20 rounded z-10"><Lock className="w-4 h-4 inline mr-1"/> VISUAL DATA ONLY. PII STRIPPED.</div>
-          <div className="w-96 h-96 rounded-full border border-slate-700/50 bg-[radial-gradient(circle_at_center,_#334155_0%,_#000000_70%)] animate-pulse flex items-center justify-center opacity-80 shadow-[0_0_50px_rgba(255,255,255,0.05)]">
+        <AnimatePresence>
+          {transmitState === 'success' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-8">
+              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white border-2 border-emerald-500 shadow-2xl rounded-3xl p-10 max-w-md text-center w-full">
+                <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
+                <h3 className="text-3xl font-black text-teal-950 mb-3 tracking-tight">Transmission Success</h3>
+                <p className="text-slate-600 font-medium mb-8">Advisory report encrypted and routed to Riyadh General EHR. Shield applied.</p>
+                <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-200 mb-8 overflow-hidden text-center">
+                  <p className="text-xs font-bold text-emerald-800 uppercase tracking-widest mb-1">FinTech Bypass Executed</p>
+                  <p className="text-4xl font-black text-emerald-600">+$30.00 USD</p>
+                </div>
+                <button onClick={() => setView('provider-dashboard')} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">Return to Dashboard <ArrowRight className="w-5 h-5"/></button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="w-full lg:w-[45%] bg-black relative flex flex-col border-r border-slate-800 justify-center">
+          <div className="absolute top-4 left-4 z-10 text-emerald-500 text-xs p-2 border border-emerald-500 bg-emerald-900/20 rounded font-bold uppercase"><Lock className="w-4 h-4 inline mr-1"/> VISUAL DATA ONLY</div>
+          <div className="w-96 h-96 mx-auto rounded-full border border-slate-700/50 bg-[radial-gradient(circle_at_center,_#334155_0%,_#000000_70%)] animate-pulse flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.05)]">
              <Activity className="w-32 h-32 text-slate-400 opacity-20" />
           </div>
         </div>
 
-        {/* REPORTING */}
-        <div className="w-1/2 bg-slate-50 p-10 flex flex-col relative">
-          
-          <AnimatePresence>
-            {transmitStatus === 'success' && (
-              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="absolute z-50 inset-0 bg-white/90 backdrop-blur-md flex items-center justify-center p-10">
-                <div className="bg-white border-2 border-emerald-500 p-10 rounded-3xl shadow-2xl w-full max-w-md text-center">
-                  <CheckCircle className="w-20 h-20 text-emerald-500 mx-auto mb-6" />
-                  <h2 className="text-3xl font-black text-teal-950 mb-2">Transmission Success</h2>
-                  <p className="text-slate-500 font-medium mb-8">FinTech Bypass Executed. Report synced to Riyadh EHR.</p>
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 mb-8 shadow-inner">
-                     <p className="text-emerald-800 font-bold text-xs uppercase tracking-widest mb-2">Offshore Vault Credited</p>
-                     <p className="text-4xl font-black text-emerald-600">+$30 USD</p>
-                  </div>
-                  <button onClick={() => setView('provider-dashboard')} className="w-full bg-teal-950 text-white font-bold py-5 rounded-xl text-lg shadow-lg hover:bg-teal-900">Return to Dashboard</button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className={`flex flex-col flex-1 transition-opacity duration-500 ${transmitStatus==='success' ? 'opacity-0' : 'opacity-100'}`}>
-            <h2 className="text-3xl font-extrabold text-teal-950 mb-6">Diagnostic Advisory Report</h2>
-            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex gap-4 mb-8 shadow-sm">
-              <AlertTriangle className="w-7 h-7 text-amber-600 shrink-0" />
-              <p className="text-amber-900 text-sm font-medium leading-relaxed"><strong>Legal Malpractice Shield:</strong> You are providing an asynchronous advisory opinion. Primary liability remains securely with the KSA attending physician.</p>
+        <div className="w-full lg:w-[55%] bg-slate-50 flex flex-col p-8 lg:p-12">
+          <h2 className="text-3xl font-extrabold text-teal-950 mb-6 tracking-tight">Diagnostic Report</h2>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-8 flex gap-4 shadow-sm">
+            <AlertTriangle className="w-8 h-8 text-amber-600 shrink-0" />
+            <div>
+              <p className="text-amber-900 font-bold text-sm uppercase tracking-wide mb-1">Legal Shield Active</p>
+              <p className="text-amber-800 text-sm font-medium">Providing asynchronous advisory opinion. Final liability remains entirely with the KSA attending physician.</p>
             </div>
-            
-            <textarea 
-              value={report} onChange={e => setReport(e.target.value)} disabled={transmitStatus !== 'idle'}
-              placeholder="Type diagnostic findings..."
-              className="flex-1 bg-white border border-slate-300 rounded-2xl p-6 shadow-inner focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-lg leading-relaxed text-slate-800 font-medium"
-            ></textarea>
-            
-            <button 
-              onClick={onTransmit} disabled={transmitStatus !== 'idle'}
-              className="mt-6 w-full bg-emerald-600 text-white py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 shadow-[0_10px_20px_rgba(5,150,105,0.2)] disabled:bg-slate-300 disabled:shadow-none disabled:text-slate-500 transition-all hover:-translate-y-1"
-            >
-              {transmitStatus === 'idle' && <>Transmit Report & Claim $30 Fee <ArrowRight/></>}
-              {transmitStatus === 'transmitting' && "Encrypting & Transmitting..."}
+          </div>
+          <div className="flex-1 flex flex-col">
+            <label className="block text-sm font-bold text-teal-900 mb-2 uppercase tracking-wide">Advisory Impression</label>
+            <textarea value={report} onChange={(e) => setReport(e.target.value)} disabled={transmitState !== 'idle'} className="w-full h-48 bg-white border border-slate-300 rounded-xl p-5 text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none resize-none shadow-sm font-medium leading-relaxed"></textarea>
+            <button onClick={handleTransmit} disabled={transmitState !== 'idle'} className={`mt-8 w-full py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 transition-all shadow-xl ${transmitState === 'idle' ? 'bg-emerald-600 text-white cursor-pointer hover:bg-emerald-500' : 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'}`}>
+              {transmitState === 'idle' && <>Sign & Transmit Advisory <span className="bg-emerald-800 px-3 py-1 rounded-lg text-sm ml-2">Claim $30 Fee</span></>}
+              {transmitState !== 'idle' && <><Server className="animate-pulse w-6 h-6" /> Applying Encryption & Transmitting...</>}
             </button>
           </div>
         </div>
