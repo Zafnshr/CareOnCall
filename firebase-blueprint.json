@@ -1,0 +1,27 @@
+{
+  "entities": {
+    "Avatar": {
+      "title": "Avatar",
+      "description": "Stores the avatar image for a single founder.",
+      "type": "object",
+      "properties": {
+        "photoData": {
+          "type": "string",
+          "description": "Base64 encoded string of the avatar image."
+        },
+        "updatedAt": {
+          "type": "timestamp"
+        }
+      },
+      "required": ["photoData", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/avatars/{founderId}": {
+      "schema": {
+        "$ref": "Avatar"
+      },
+      "description": "Avatar images for founders"
+    }
+  }
+}

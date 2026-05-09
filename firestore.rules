@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    function isValidAvatar(data) {
+      return data.keys().hasAll(['photoData', 'updatedAt']) && 
+             data.keys().size() == 2 &&
+             data.photoData is string && data.photoData.size() <= 1000000 &&
+             data.updatedAt == request.time;
+    }
+
+    match /avatars/{founderId} {
+      allow read: if true;
+      allow create: if isVerified() && isValidId(founderId) && isValidAvatar(incoming());
+      allow update: if isVerified() && isValidId(founderId) && isValidAvatar(incoming());
+    }
+  }
+}

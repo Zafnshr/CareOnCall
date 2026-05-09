@@ -7,6 +7,9 @@ import {
   Maximize, Contrast, Download, AlertTriangle, Users, FileDigit, Server,
   Menu, X
 } from 'lucide-react';
+import { doc, setDoc, onSnapshot, serverTimestamp, collection } from 'firebase/firestore';
+import { db, auth, handleFirestoreError, OperationType } from './firebase';
+import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 
 type ViewState = 'landing' | 'provider-login' | 'provider-dashboard' | 'scan-simulation';
 type TabState = 'home' | 'pipeline' | 'pricing' | 'team' | 'contact';
@@ -278,11 +281,35 @@ function TabPricing() {
 
 function TabTeam() {
   const [photos, setPhotos] = useState<Record<string, string>>({});
-  
+  const [user, setUser] = useState<User | null>(null);
+
   useEffect(() => {
-    const savedPhotos = localStorage.getItem('careoncall_avatars');
-    if (savedPhotos) setPhotos(JSON.parse(savedPhotos));
+    const unsubAuth = onAuthStateChanged(auth, (u) => setUser(u));
+    
+    const unsubSnapshot = onSnapshot(collection(db, 'avatars'), (snapshot) => {
+      const newPhotos: Record<string, string> = {};
+      snapshot.forEach(d => {
+         newPhotos[d.id] = d.data().photoData;
+      });
+      setPhotos(newPhotos);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'avatars');
+    });
+    
+    return () => {
+      unsubAuth();
+      unsubSnapshot();
+    };
   }, []);
+
+  const handleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      alert("Login Error: " + error.message);
+    }
+  };
 
   const team = [
     { id: 'kareem', name: 'Kareem Amr', role: 'Leader | Strategy & Operations' },
@@ -292,14 +319,53 @@ function TabTeam() {
     { id: 'emad', name: 'Mohammed Emad', role: 'Enterprise Partnerships' }
   ];
 
-  const handleImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) {
+      alert("Please sign in first to securely upload credentials.");
+      return;
+    }
+    
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         if (event.target?.result) {
-          const newPhotos = { ...photos, [id]: event.target.result as string };
-          setPhotos(newPhotos);
-          localStorage.setItem('careoncall_avatars', JSON.stringify(newPhotos));
+          const img = new Image();
+          img.onload = async () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxSize = 400;
+            if (width > height) {
+              if (width > maxSize) {
+                height *= maxSize / width;
+                width = maxSize;
+              }
+            } else {
+              if (height > maxSize) {
+                width *= maxSize / height;
+                height = maxSize;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            const photoData = canvas.toDataURL('image/jpeg', 0.8);
+
+            setPhotos(prev => ({ ...prev, [id]: photoData }));
+            try {
+               await setDoc(doc(db, 'avatars', id), {
+                  photoData: photoData,
+                  updatedAt: serverTimestamp()
+               });
+            } catch (error: any) {
+               alert("Upload failed. Make sure you are signed in and have correct permissions.");
+               try {
+                 handleFirestoreError(error, OperationType.WRITE, `avatars/${id}`);
+               } catch(e) { console.error(e); }
+            }
+          };
+          img.src = event.target.result as string;
         }
       };
       reader.readAsDataURL(e.target.files[0]);
@@ -309,14 +375,25 @@ function TabTeam() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 bg-slate-50 py-20">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 relative">
+          <div className="absolute right-0 top-0">
+            {!user ? (
+              <button onClick={handleLogin} className="text-sm bg-teal-100 hover:bg-teal-200 text-teal-800 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
+                <Lock className="w-4 h-4"/> Authorized Upload
+              </button>
+            ) : (
+              <span className="text-sm bg-emerald-100 text-emerald-800 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
+                 <CheckCircle className="w-4 h-4" /> Provider ({user.email?.split('@')[0]})
+              </span>
+            )}
+          </div>
           <h2 className="text-4xl font-extrabold text-teal-950 mb-4">The Founders Behind the Bridge</h2>
           <p className="text-xl text-slate-600 font-medium">Click on any profile icon to securely upload personnel credentials.</p>
         </div>
         <div className="flex flex-wrap justify-center gap-10">
           {team.map((member) => (
             <div key={member.id} className="flex flex-col items-center group w-64">
-              <label className="relative cursor-pointer mb-6">
+              <label className="relative cursor-pointer mb-6" onClick={(e) => { if (!user) { e.preventDefault(); handleLogin(); } }}>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(member.id, e)} />
                 <div className="w-48 h-48 rounded-full border-4 border-emerald-500 bg-white flex items-center justify-center overflow-hidden transition-all shadow-lg group-hover:shadow-xl relative">
                   {photos[member.id] ? (
